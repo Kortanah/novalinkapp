@@ -1,347 +1,1542 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NovaLink App</title>
-    <style>
-        /* [Your existing CSS remains exactly as you provided it] */
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{
-            --blue:#3B82F6;--blue-light:rgba(59,130,246,0.15);--blue-dark:#2563EB;
-            --green:rgba(34,197,94,0.15);--green-text:#4ADE80;
-            --amber:rgba(251,191,36,0.15);--amber-text:#FCD34D;
-            --red:rgba(239,68,68,0.15);--red-text:#F87171;
-            --bg:#0F1117;--bg2:#161B27;--bg3:#1E2435;--bg4:#252D40;
-            --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
-            --text:#E8EAF0;--text2:#8B92A5;--text3:#525A6E;
-            --radius:10px;--radius-sm:7px;
-        }
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
-        .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
-        .logo{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
-        .logo-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue)}
-        .bal-pill{margin-left:auto;background:var(--blue-light);color:var(--blue);font-size:12px;font-weight:600;padding:5px 14px;border-radius:99px;cursor:pointer;border:1px solid rgba(59,130,246,0.3);font-family:inherit;transition:all .15s}
-        .bal-pill:hover{background:rgba(59,130,246,0.25)}
-        .container{max-width:960px;margin:0 auto;padding:20px 14px}
-        .tabs{display:flex;gap:2px;background:var(--bg2);border-radius:var(--radius);padding:4px;margin-bottom:18px;border:1px solid var(--border)}
-        .tab{flex:1;text-align:center;padding:8px 8px;border-radius:var(--radius-sm);border:none;background:transparent;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
-        .tab.active{background:var(--bg4);color:var(--text);border:1px solid var(--border2)}
-        .panel{display:none}.panel.active{display:block}
-        .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
-        .card-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
-        .field{margin-bottom:12px}
-        .field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px}
-        .fi{width:100%;padding:9px 11px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;color:var(--text);background:var(--bg3);outline:none;transition:border-color .15s}
-        .fi:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,0.15)}
-        textarea.fi{min-height:100px;resize:vertical;line-height:1.65}
-        .btn{padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;display:inline-block}
-        .btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-dark)}
-        .btn-primary:disabled{background:#2a3a5c;color:var(--text3);cursor:not-allowed}
-        .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2)}.btn-outline:hover{background:var(--bg4);color:var(--text)}
-        .btn-danger{background:var(--red);color:var(--red-text);border:1px solid rgba(239,68,68,0.2)}
-        .btn-success{background:var(--green);color:var(--green-text);border:1px solid rgba(34,197,94,0.2)}
-        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-        .stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px}
-        .stat-val{font-size:24px;font-weight:700;color:var(--text)}
-        .stat-lbl{font-size:11px;color:var(--text3);margin-top:3px}
-        .frow{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:8px;flex-wrap:wrap}
-        .divider{border:none;border-top:1px solid var(--border);margin:16px 0}
-        .char-count{font-size:11px;color:var(--text3);text-align:right;margin-top:4px}
-        .prog-bg{background:var(--bg3);border-radius:99px;height:5px;overflow:hidden;margin:8px 0}
-        .prog-bar{height:100%;background:var(--blue);border-radius:99px;transition:width .3s;box-shadow:0 0 6px var(--blue)}
-        .log-entry{padding:9px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px}
-        .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px}
-        .b-ok{background:var(--green);color:var(--green-text)}
-        .b-err{background:var(--red);color:var(--red-text)}
-        .b-info{background:var(--blue-light);color:var(--blue)}
-        .tag-chip{display:inline-block;background:var(--blue-light);color:var(--blue);font-size:11px;padding:2px 9px;border-radius:99px;margin:2px;border:1px solid rgba(59,130,246,0.2)}
-        .upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:22px;text-align:center;cursor:pointer;background:var(--bg3);transition:all .15s}
-        .upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:rgba(59,130,246,0.05)}
-        .preview-box{background:var(--bg);border-radius:var(--radius-sm);padding:14px;font-family:'Courier New',monospace;font-size:12px;color:var(--text2);min-height:80px;white-space:pre;overflow-x:auto;border:1px solid var(--border)}
-        table{width:100%;border-collapse:collapse;font-size:13px}
-        th{text-align:left;font-size:11px;color:var(--text3);padding:9px 10px;border-bottom:1px solid var(--border)}
-        td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text)}
-        .tpl-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;cursor:pointer;position:relative}
-        .tpl-card.selected{border-color:var(--blue);background:rgba(59,130,246,0.07)}
-        .tpl-preview{font-family:'Courier New',monospace;font-size:11px;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-top:10px;white-space:pre-wrap;display:none}
-        .tpl-card.selected .tpl-preview{display:block}
-        .var-tag{display:inline-block;background:rgba(251,191,36,0.15);color:var(--amber-text);border:1px solid rgba(251,191,36,0.25);border-radius:4px;font-size:10px;padding:1px 6px;font-family:monospace}
-        input[type=file]{display:none}
-        #toast{position:fixed;bottom:20px;right:20px;color:#fff;padding:12px 18px;border-radius:var(--radius);font-size:13px;z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;border:1px solid rgba(255,255,255,0.1)}
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NovaLink SMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --blue:#4F8EF7;
+  --blue-dim:rgba(79,142,247,0.12);
+  --blue-glow:rgba(79,142,247,0.35);
+  --green:#34D399;--green-dim:rgba(52,211,153,0.12);
+  --amber:#FBBF24;--amber-dim:rgba(251,191,36,0.12);
+  --red:#F87171;--red-dim:rgba(248,113,113,0.12);
+  --bg:#09090F;--bg2:#0F1019;--bg3:#141520;--bg4:#1B1D2E;--bg5:#21243A;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.18);
+  --text:#E6E8F0;--text2:#8B90A8;--text3:#4A4F66;
+  --radius:12px;--radius-sm:8px;--radius-xs:5px;
+  --font-head:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  font-size:14px;
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79,142,247,0.08) 0%, transparent 60%);
+}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:2px}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:rgba(9,9,15,0.85);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  height:56px;
+  display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;
+}
+
+.logo{
+  font-family:var(--font-head);
+  font-size:17px;font-weight:800;
+  color:var(--text);
+  display:flex;align-items:center;gap:9px;
+  letter-spacing:-0.3px;
+}
+.logo-icon{
+  width:30px;height:30px;
+  background:var(--blue);
+  border-radius:8px;
+  display:grid;place-items:center;
+  font-size:14px;
+  box-shadow:0 0 14px var(--blue-glow);
+}
+
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+.bal-display{
+  font-family:var(--font-mono);
+  font-size:12px;color:var(--green);
+  background:var(--green-dim);
+  border:1px solid rgba(52,211,153,0.2);
+  padding:5px 12px;border-radius:99px;
+  display:none;
+}
+.bal-display.show{display:block}
+
+.btn-bal{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 14px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--border2);
+  background:var(--bg3);
+  color:var(--text2);
+  font-size:12px;font-weight:500;
+  cursor:pointer;font-family:var(--font-body);
+  transition:all .15s;
+}
+.btn-bal:hover{border-color:var(--border3);color:var(--text);background:var(--bg4)}
+.btn-bal.loading{pointer-events:none;opacity:.6}
+
+/* ── LAYOUT ── */
+.container{max-width:980px;margin:0 auto;padding:24px 16px}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:3px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:4px;
+  margin-bottom:20px;
+}
+.tab{
+  flex:1;text-align:center;
+  padding:8px 6px;
+  border-radius:var(--radius-sm);
+  border:none;background:transparent;
+  font-size:12px;font-weight:600;
+  font-family:var(--font-body);
+  letter-spacing:.02em;
+  color:var(--text3);
+  cursor:pointer;
+  transition:all .18s;
+}
+.tab:hover{color:var(--text2);background:var(--bg4)}
+.tab.active{
+  background:var(--bg5);
+  color:var(--text);
+  border:1px solid var(--border2);
+  box-shadow:0 1px 4px rgba(0,0,0,0.4);
+}
+.panel{display:none}.panel.active{display:block}
+
+/* ── CARDS ── */
+.card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  margin-bottom:14px;
+  transition:border-color .2s;
+}
+.card:hover{border-color:var(--border2)}
+
+.card-title{
+  font-family:var(--font-head);
+  font-size:11px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:14px;
+}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.stat{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  position:relative;overflow:hidden;
+}
+.stat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent,var(--blue)),transparent);
+  opacity:.6;
+}
+.stat.s-sent{--accent:var(--green)}
+.stat.s-fail{--accent:var(--red)}
+.stat-val{
+  font-family:var(--font-head);
+  font-size:28px;font-weight:800;
+  color:var(--text);line-height:1;
+}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:5px;font-weight:500}
+
+/* ── FORMS ── */
+.field{margin-bottom:13px}
+.field label{
+  display:block;font-size:12px;font-weight:600;
+  color:var(--text2);margin-bottom:5px;
+  letter-spacing:.01em;
+}
+.fi{
+  width:100%;
+  padding:9px 12px;
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  font-size:13px;font-family:var(--font-body);
+  color:var(--text);background:var(--bg3);
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.fi:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px var(--blue-dim);
+  background:var(--bg4);
+}
+.fi::placeholder{color:var(--text3)}
+textarea.fi{min-height:110px;resize:vertical;line-height:1.7;font-family:var(--font-mono);font-size:12.5px}
+select.fi option{background:var(--bg3)}
+
+.char-count{
+  font-size:11px;color:var(--text3);
+  text-align:right;margin-top:4px;
+  font-family:var(--font-mono);
+}
+.char-count.warn{color:var(--amber)}
+.char-count.over{color:var(--red)}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:9px 18px;
+  border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;
+  cursor:pointer;border:none;
+  font-family:var(--font-body);
+  transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;
+  letter-spacing:.01em;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+.btn-primary{
+  background:var(--blue);color:#fff;
+  box-shadow:0 0 14px var(--blue-glow);
+}
+.btn-primary:not(:disabled):hover{
+  background:#3a7de8;
+  box-shadow:0 0 20px var(--blue-glow);
+  transform:translateY(-1px);
+}
+
+.btn-outline{
+  background:transparent;
+  border:1px solid var(--border2);
+  color:var(--text2);
+}
+.btn-outline:hover{background:var(--bg4);color:var(--text);border-color:var(--border3)}
+
+.btn-success{
+  background:var(--green-dim);color:var(--green);
+  border:1px solid rgba(52,211,153,0.2);
+}
+.btn-success:hover{background:rgba(52,211,153,0.2)}
+
+.btn-danger{
+  background:var(--red-dim);color:var(--red);
+  border:1px solid rgba(248,113,113,0.2);
+}
+.btn-danger:hover{background:rgba(248,113,113,0.2)}
+
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* ── GRIDS ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* ── ROW LAYOUT ── */
+.frow{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:8px;flex-wrap:wrap}
+.frow-start{justify-content:flex-start}
+.divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+
+/* ── PROGRESS ── */
+.prog-bg{background:var(--bg4);border-radius:99px;height:4px;overflow:hidden;margin:8px 0}
+.prog-bar{
+  height:100%;background:linear-gradient(90deg,var(--blue),var(--green));
+  border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 8px var(--blue-glow);
+}
+
+/* ── LOG ── */
+.log-entry{
+  padding:10px 0;
+  border-bottom:1px solid var(--border);
+  display:grid;
+  grid-template-columns:28px 80px 120px 1fr 70px;
+  align-items:center;gap:10px;
+  font-size:12px;
+}
+.log-entry:last-child{border-bottom:none}
+.log-idx{color:var(--text3);font-family:var(--font-mono);font-size:11px}
+.log-name{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-phone{color:var(--text3);font-family:var(--font-mono);font-size:11px}
+.log-msg{color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-empty{color:var(--text3);font-size:13px;text-align:center;padding:30px 0}
+
+/* ── BADGES ── */
+.badge{
+  display:inline-block;font-size:11px;font-weight:700;
+  padding:2px 9px;border-radius:99px;
+  font-family:var(--font-mono);letter-spacing:.03em;
+}
+.b-ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,0.2)}
+.b-err{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
+.b-info{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(79,142,247,0.2)}
+.b-warn{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,0.2)}
+
+/* ── CONTACTS ── */
+.upload-zone{
+  border:1.5px dashed var(--border2);
+  border-radius:var(--radius);
+  padding:28px;text-align:center;
+  cursor:pointer;background:var(--bg3);
+  transition:all .18s;
+}
+.upload-zone:hover,.upload-zone.drag{
+  border-color:var(--blue);
+  background:var(--blue-dim);
+}
+.uico{font-size:28px;margin-bottom:8px}
+.utitle{font-family:var(--font-head);font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px}
+.usub{font-size:12px;color:var(--text3)}
+
+input[type=file]{display:none}
+input[type=checkbox]{accent-color:var(--blue)}
+
+.search-bar{
+  padding:8px 12px;
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  font-size:13px;font-family:var(--font-body);
+  outline:none;background:var(--bg3);color:var(--text);
+  width:200px;transition:border-color .15s;
+}
+.search-bar:focus{border-color:var(--blue)}
+.search-bar::placeholder{color:var(--text3)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  text-align:left;font-size:11px;font-weight:700;
+  color:var(--text3);text-transform:uppercase;letter-spacing:.06em;
+  padding:9px 10px;border-bottom:1px solid var(--border);
+  font-family:var(--font-head);
+}
+td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{
+  font-size:12px;padding:3px 12px;border-radius:99px;
+  cursor:pointer;display:inline-block;border:1px solid transparent;
+  font-weight:600;transition:all .12s;
+}
+.chip.on{background:var(--blue-dim);color:var(--blue);border-color:rgba(79,142,247,0.3)}
+.chip.off{background:var(--bg3);color:var(--text2);border-color:var(--border)}
+.chip.off:hover{border-color:var(--border2);color:var(--text)}
+
+.tag-chip{
+  display:inline-block;background:var(--blue-dim);color:var(--blue);
+  font-size:11px;padding:2px 9px;border-radius:99px;margin:2px;
+  border:1px solid rgba(79,142,247,0.2);font-family:var(--font-mono);
+}
+
+/* ── CONVERTER ── */
+.conv-cols{display:grid;grid-template-columns:1fr 36px 1fr;gap:12px;align-items:start}
+.arrow-mid{display:flex;align-items:center;justify-content:center;padding-top:36px;font-size:22px;color:var(--text3)}
+.preview-box{
+  background:var(--bg);border-radius:var(--radius-sm);
+  padding:14px;font-family:var(--font-mono);font-size:12px;
+  color:var(--text2);min-height:90px;white-space:pre;overflow-x:auto;
+  border:1px solid var(--border);line-height:1.7;
+}
+
+.map-row{
+  display:grid;grid-template-columns:1fr 24px 1fr 30px;
+  align-items:center;gap:8px;margin-bottom:8px;font-size:13px;
+}
+.map-arrow{text-align:center;color:var(--text3)}
+
+/* ── TEMPLATES ── */
+.tpl-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;
+  cursor:pointer;transition:all .15s;position:relative;
+}
+.tpl-card:hover{border-color:var(--border2);background:var(--bg4)}
+.tpl-card.selected{border-color:var(--blue);background:var(--blue-dim)}
+
+.tpl-name{font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--text);margin-bottom:2px}
+.tpl-desc{font-size:12px;color:var(--text3)}
+.tpl-badge{position:absolute;top:10px;right:10px;display:flex;gap:6px;align-items:center}
+.tpl-preview{
+  font-family:var(--font-mono);font-size:11px;color:var(--text2);
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px;margin-top:10px;
+  white-space:pre-wrap;line-height:1.7;display:none;
+}
+.tpl-card.selected .tpl-preview{display:block}
+.var-tag{
+  display:inline-block;
+  background:var(--amber-dim);color:var(--amber);
+  border:1px solid rgba(251,191,36,0.25);
+  border-radius:4px;font-size:10px;padding:1px 7px;
+  font-family:var(--font-mono);
+}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:24px;right:24px;
+  color:#fff;padding:12px 20px;border-radius:var(--radius);
+  font-size:13px;font-weight:500;font-family:var(--font-body);
+  z-index:9999;opacity:0;transform:translateY(10px);
+  transition:all .22s cubic-bezier(.4,0,.2,1);
+  max-width:340px;pointer-events:none;
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(8px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* ── STATUS INDICATOR ── */
+.status-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--text3);display:inline-block;margin-right:5px;
+}
+.status-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.err{background:var(--red);box-shadow:0 0 6px var(--red)}
+
+/* ── SECTION HEADER ── */
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+
+/* ── EXPORT ACTIONS ── */
+.log-export{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  .conv-cols{grid-template-columns:1fr}
+  .arrow-mid{display:none}
+  .log-entry{grid-template-columns:1fr auto;grid-template-rows:auto auto}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .topbar{padding:0 14px}
+  .container{padding:16px 10px}
+}
+</style>
 </head>
 <body>
 
+<!-- TOPBAR -->
 <div class="topbar">
-    <div class="logo"><div class="logo-dot"></div>NovaLink App</div>
-    <button class="bal-pill" id="balBtn" onclick="checkBalance()">⟳ SMS Balance</button>
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    NovaLink
+  </div>
+  <div class="topbar-right">
+    <div class="bal-display" id="balDisplay">
+      <span class="status-dot ok"></span>
+      <span id="balText">— SMS</span>
+    </div>
+    <button class="btn-bal" id="balBtn" onclick="checkBalance()">
+      <span id="balSpinner">↻</span> Check Balance
+    </button>
+  </div>
 </div>
 
 <div class="container">
-    <div class="tabs">
-        <button class="tab active" onclick="switchTab('messaging',this)">Messaging</button>
-        <button class="tab" onclick="switchTab('contacts',this)">Contacts</button>
-        <button class="tab" onclick="switchTab('converter',this)">CSV Converter</button>
-        <button class="tab" onclick="switchTab('templates',this)">Templates</button>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('messaging',this)">✉ Messaging</button>
+    <button class="tab" onclick="switchTab('contacts',this)">👥 Contacts</button>
+    <button class="tab" onclick="switchTab('converter',this)">⇄ Converter</button>
+    <button class="tab" onclick="switchTab('templates',this)">📋 Templates</button>
+  </div>
+
+  <!-- ══════════════ MESSAGING ══════════════ -->
+  <div id="messaging" class="panel active">
+
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-val" id="statTotal">0</div>
+        <div class="stat-lbl">Contacts loaded</div>
+      </div>
+      <div class="stat s-sent">
+        <div class="stat-val" id="statSent">0</div>
+        <div class="stat-lbl">Sent this session</div>
+      </div>
+      <div class="stat s-fail">
+        <div class="stat-val" id="statFail">0</div>
+        <div class="stat-lbl">Failed</div>
+      </div>
     </div>
 
-    <div id="messaging" class="panel active">
-        <div class="grid3" style="margin-bottom:14px">
-            <div class="stat"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Contacts</div></div>
-            <div class="stat"><div class="stat-val" id="statSent">0</div><div class="stat-lbl">Sent</div></div>
-            <div class="stat"><div class="stat-val" id="statFail">0</div><div class="stat-lbl">Failed</div></div>
+    <!-- QUICK MESSAGE -->
+    <div class="card">
+      <div class="card-title">Quick message — single recipient</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Phone number</label>
+          <input type="tel" id="quickPhone" class="fi" placeholder="024... or +233..." />
         </div>
-
-        <div class="card">
-            <div class="card-title">Quick message</div>
-            <div class="grid2">
-                <div class="field"><label>Phone</label><input type="tel" id="quickPhone" class="fi" /></div>
-                <div class="field"><label>Name</label><input type="text" id="quickName" class="fi" /></div>
-            </div>
-            <div class="field">
-                <select id="quickTplSel" class="fi" onchange="applyTplToQuick()"></select>
-                <textarea id="quickMsg" class="fi" oninput="countQ()"></textarea>
-                <div class="char-count"><span id="qcc">0</span>/160 | <span id="qpg">1</span> page</div>
-            </div>
-            <button class="btn btn-primary" id="qBtn" onclick="sendQuick()">Send message</button>
+        <div class="field">
+          <label>Name <span style="color:var(--text3);font-weight:400">(for {{name}} variable)</span></label>
+          <input type="text" id="quickName" class="fi" placeholder="Recipient name" />
         </div>
-
-        <div class="card">
-            <div class="card-title">Broadcast</div>
-            <div class="field">
-                <label>Recipient Group</label>
-                <select id="recipientFilter" class="fi"></select>
-            </div>
-            <div class="field">
-                <select id="broadTplSel" class="fi" onchange="applyTplToBroad()"></select>
-                <textarea id="msgBody" class="fi" oninput="countB()"></textarea>
-                <div class="char-count"><span id="bcc">0</span>/160 | <span id="bpg">1</span> page</div>
-            </div>
-            <button class="btn btn-primary" id="sendBtn" onclick="sendBroadcast()">Send Broadcast</button>
-            <div id="progWrap" style="display:none;margin-top:10px">
-                <div id="progLabel" style="font-size:12px;margin-bottom:4px">0%</div>
-                <div class="prog-bg"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
-            </div>
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <select id="quickTplSel" class="fi" style="flex:1;min-width:160px">
+            <option value="">— choose template —</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="applyTplToQuick()">Apply</button>
         </div>
-
-        <div class="card">
-            <div class="card-title">Send Log</div>
-            <div id="sendLog" style="max-height:200px;overflow-y:auto"></div>
+        <textarea id="quickMsg" class="fi" placeholder="Type your message or apply a template…" oninput="countQ()"></textarea>
+        <div class="char-count" id="qCharCount"><span id="qcc">0</span>/160 · <span id="qpg">1</span> page(s)</div>
+      </div>
+      <div class="frow">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="status-dot" id="qStatus"></span>
+          <span style="font-size:12px;color:var(--text3)" id="qStatusTxt">Ready</span>
         </div>
+        <button class="btn btn-primary" id="qBtn" onclick="sendQuick()">Send ↗</button>
+      </div>
     </div>
 
-    <div id="contacts" class="panel">
-        <div class="card">
-            <div class="upload-zone" onclick="$('cFile').click()">📂 Drop or Click to Load Contacts CSV</div>
-            <input type="file" id="cFile" accept=".csv" onchange="loadContacts(event)" />
+    <div class="divider"></div>
+
+    <!-- BROADCAST -->
+    <div class="card">
+      <div class="card-title">Broadcast — send to multiple contacts</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Campaign name</label>
+          <input type="text" id="campaignName" class="fi" placeholder="e.g. April promo" />
         </div>
-        <div class="card">
-            <table id="cTable">
-                <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Tags</th></tr></thead>
-                <tbody id="cBody"></tbody>
-            </table>
+        <div class="field">
+          <label>Recipients</label>
+          <select id="recipientFilter" class="fi" onchange="updateRCount()">
+            <option value="all">All contacts</option>
+          </select>
         </div>
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <select id="broadTplSel" class="fi" style="flex:1;min-width:160px">
+            <option value="">— choose template —</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="applyTplToBroad()">Apply</button>
+        </div>
+        <textarea id="msgBody" class="fi" placeholder="Type your broadcast message or apply a template…" oninput="countB()"></textarea>
+        <div class="char-count" id="bCharCount"><span id="bcc">0</span>/160 · <span id="bpg">1</span> page(s)</div>
+      </div>
+
+      <div id="progWrap" style="display:none;margin-top:12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px">
+          <span id="progLabel">Preparing…</span>
+          <span id="progPct">0%</span>
+        </div>
+        <div class="prog-bg"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
+      </div>
+
+      <div class="frow">
+        <span style="font-size:12px;color:var(--text3)" id="rCount">0 recipients</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="previewB()">Preview</button>
+          <button class="btn btn-danger btn-sm" id="cancelBtn" onclick="cancelBroadcast()" style="display:none">⏹ Stop</button>
+          <button class="btn btn-primary" id="sendBtn" onclick="sendBroadcast()">Send broadcast</button>
+        </div>
+      </div>
     </div>
 
-    <div id="templates" class="panel">
-        <div class="card">
-            <div id="tplList"></div>
+    <!-- LOG -->
+    <div class="card">
+      <div class="section-header">
+        <div class="card-title" style="margin:0">Send log</div>
+        <div class="log-export">
+          <button class="btn btn-outline btn-sm" onclick="exportLog()">⬇ Export CSV</button>
+          <button class="btn btn-outline btn-sm" onclick="clearLog()">Clear</button>
         </div>
-        <div class="card">
-            <div class="card-title">Manage Template</div>
-            <input type="text" id="tplName" class="fi" placeholder="Template Name" style="margin-bottom:10px"/>
-            <textarea id="tplBody" class="fi" placeholder="Message..."></textarea>
-            <button class="btn btn-primary" onclick="saveTpl()" style="margin-top:10px">Save Template</button>
-        </div>
+      </div>
+      <div id="sendLog" style="max-height:300px;overflow-y:auto">
+        <div class="log-empty">No messages sent yet</div>
+      </div>
     </div>
+
+  </div>
+
+  <!-- ══════════════ CONTACTS ══════════════ -->
+  <div id="contacts" class="panel">
+    <div class="card">
+      <div class="card-title">Upload contacts CSV</div>
+      <div class="upload-zone" id="cDropZone"
+        onclick="document.getElementById('cFile').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="cDrop(event)">
+        <div class="uico">📂</div>
+        <div class="utitle">Drop CSV or click to browse</div>
+        <div class="usub">Accepts: name, phone, tags · Phone-only CSVs also work</div>
+      </div>
+      <input type="file" id="cFile" accept=".csv" onchange="loadContacts(event)" />
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <button class="btn btn-outline btn-sm" onclick="dlTemplate()">⬇ Download template</button>
+        <span style="font-size:12px;color:var(--text3)">name, phone, tags, voucher_code, package_name, amount</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header" style="flex-wrap:wrap;gap:8px">
+        <div class="card-title" style="margin:0">Contacts (<span id="cCount">0</span>)</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="search-bar" type="text" placeholder="Search name or phone…" oninput="filterC(this.value)" />
+          <button class="btn btn-danger btn-sm" onclick="clearContacts()">Clear all</button>
+        </div>
+      </div>
+      <div class="chip-row" id="tagFilters"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th><input type="checkbox" id="selAll" onchange="toggleAll()" /></th>
+            <th>#</th><th>Name</th><th>Phone</th><th>Tags</th><th>Voucher</th>
+          </tr></thead>
+          <tbody id="cBody">
+            <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:28px 0">No contacts loaded</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="frow">
+        <span style="font-size:12px;color:var(--text3)" id="selCount">0 selected</span>
+        <button class="btn btn-primary btn-sm" onclick="goMsg()">Message selected ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ CSV CONVERTER ══════════════ -->
+  <div id="converter" class="panel">
+    <div class="card">
+      <div class="card-title">CSV structure converter</div>
+      <div class="conv-cols">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Source CSV</div>
+          <div class="upload-zone"
+            onclick="document.getElementById('vFile').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="vDrop(event)" style="padding:18px">
+            <div class="uico" style="font-size:22px">📄</div>
+            <div class="usub">Click or drop CSV</div>
+          </div>
+          <input type="file" id="vFile" accept=".csv" onchange="loadConvCSV(event)" />
+          <div style="font-size:12px;color:var(--text3);margin:10px 0 4px">Detected columns:</div>
+          <div class="chip-row" id="srcCols"><span style="color:var(--text3);font-size:12px">None</span></div>
+          <div style="font-size:12px;color:var(--text3)" id="srcRowCount"></div>
+        </div>
+        <div class="arrow-mid">→</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Output preset</div>
+          <select id="presetSel" class="fi" onchange="applyPreset(this.value)" style="margin-bottom:8px">
+            <option value="hotspot">Hotspot export → Voucher sheet</option>
+            <option value="contacts">Contact importer (name, phone, tags)</option>
+            <option value="custom">Custom mapping</option>
+          </select>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Output columns:</div>
+          <div class="chip-row" id="outColsPreview"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="card-title">Column mapping</div>
+      <div id="mapRows"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="addMapRow()">+ Add output column</button>
+      <div style="margin-top:18px">
+        <div class="card-title">Output preview (first 5 rows)</div>
+        <div class="preview-box" id="convPreview">Upload a source CSV to begin…</div>
+      </div>
+      <div class="frow">
+        <span style="font-size:12px;color:var(--text3)" id="convRowCount">0 rows</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="copyPreview()">Copy preview</button>
+          <button class="btn btn-success btn-sm" onclick="importAsContacts()">Import as contacts</button>
+          <button class="btn btn-primary btn-sm" onclick="dlConverted()">⬇ Download CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TEMPLATES ══════════════ -->
+  <div id="templates" class="panel">
+    <div class="card">
+      <div class="section-header">
+        <div class="card-title" style="margin:0">Message templates</div>
+        <span style="font-size:12px;color:var(--text3)">Click to preview · Variables auto-fill on send</span>
+      </div>
+      <div style="margin-bottom:14px;padding:12px 14px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.9">
+        Variables: &nbsp;
+        <span class="var-tag">{{name}}</span> &nbsp;
+        <span class="var-tag">{{voucher}}</span> &nbsp;
+        <span class="var-tag">{{package}}</span> &nbsp;
+        <span class="var-tag">{{amount}}</span> &nbsp;
+        <span class="var-tag">{{phone}}</span>
+        <br /><span style="color:var(--text3)">When sending to contacts: voucher_code → {{voucher}}, package_name → {{package}}</span>
+      </div>
+      <div id="tplList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Create / edit template</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Template name</label>
+          <input type="text" id="tplName" class="fi" placeholder="e.g. WiFi Voucher" />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="tplCat" class="fi">
+            <option>Voucher</option>
+            <option>Promo</option>
+            <option>Reminder</option>
+            <option>General</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Message body</label>
+        <textarea id="tplBody" class="fi" style="min-height:170px" placeholder="Type your template…" oninput="countTpl()"></textarea>
+        <div class="char-count"><span id="tplCC">0</span> chars</div>
+      </div>
+      <div class="frow">
+        <button class="btn btn-danger btn-sm" onclick="resetTplForm()">Clear form</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="previewTpl()">Preview sample</button>
+          <button class="btn btn-primary btn-sm" onclick="saveTpl()">Save template</button>
+        </div>
+      </div>
+      <div id="tplPreviewOut" style="display:none;margin-top:16px">
+        <div class="card-title">Preview</div>
+        <div class="preview-box" id="tplPreviewBox"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div id="toast"></div>
 
 <script>
-/* ==============================
-   CONFIG & STATE
-   ============================== */
+/* ════════════════════════════════
+   CONFIG — set your Google Apps Script URL here
+   ════════════════════════════════ */
 const CFG = {
-    apiKey: 'YOUR_API_KEY_HERE',
-    senderId: 'NovaLink',
-    delay: 400,
-    scriptUrl: "https://script.google.com/macros/s/AKfycbwSClRukG1-slh0NAlx0HNpErRVvOUHgMNAjmZhidZY-9jbbiHBm1WKhhRU5yIcvjOF/exec"
+  // Paste your deployed Google Apps Script URL below:
+  scriptUrl: 'YOUR_SCRIPT_URL_HERE',
+  senderId: 'NovaLink',
+  delay: 450,       // ms between sends (avoid rate limiting)
+  retries: 2        // auto-retry failed sends
 };
 
-let contacts = [];
-let templates = [
-    { id: 't1', name: 'WiFi Voucher', category: 'Voucher', body: "NovaLink WiFi\nPackage: {{package}}\nCode: {{voucher}}" }
+/* ════════════════════════════════
+   BUILT-IN TEMPLATES
+   ════════════════════════════════ */
+const BUILTIN_TEMPLATES = [
+  {
+    id: 'tpl_wifi_voucher',
+    name: 'WiFi Voucher',
+    category: 'Voucher',
+    body:
+`NovaLink WiFi Voucher
+Package : {{package}}
+Amount  : GH₵{{amount}}
+Code    : {{voucher}}
+----------------------
+How to connect:
+1. Connect to "NovaLink" WiFi
+2. Open your browser → novalink.wlan/login
+3. Enter code when prompted
+
+Thank you for choosing NovaLink!`
+  },
+  {
+    id: 'tpl_voucher_short',
+    name: 'Voucher (Short)',
+    category: 'Voucher',
+    body:
+`NovaLink | {{package}} Package
+Voucher: {{voucher}}
+Amount: GH₵{{amount}}
+Connect to NovaLink WiFi → novalink.wlan/login`
+  },
+  {
+    id: 'tpl_renewal_reminder',
+    name: 'Renewal Reminder',
+    category: 'Reminder',
+    body:
+`Hi {{name}}, your NovaLink {{package}} subscription is expiring soon.
+Renew now to stay connected!
+Call/WhatsApp us or visit novalink.wlan
+Thank you!`
+  },
+  {
+    id: 'tpl_welcome',
+    name: 'Welcome Message',
+    category: 'General',
+    body:
+`Welcome to NovaLink, {{name}}!
+You're now connected to our network.
+For support, reply or visit novalink.wlan
+Enjoy browsing!`
+  },
+  {
+    id: 'tpl_promo',
+    name: 'Promo Offer',
+    category: 'Promo',
+    body:
+`Hi {{name}}! Special offer from NovaLink!
+Get double data on your next voucher this weekend.
+Visit us or call to get yours now.
+NovaLink – Stay Connected.`
+  }
 ];
+
+/* ════════════════════════════════
+   STATE
+   ════════════════════════════════ */
+let contacts = [], sendLog = [], activeTag = 'all';
+let conv = { headers: [], rows: [] }, convOut = [], convMap = {};
+let templates = [...BUILTIN_TEMPLATES];
+let editingTplId = null;
+let broadcastCancelled = false;
+let sentCount = 0, failCount = 0;
 
 const $ = id => document.getElementById(id);
 
-/* ==============================
-   CORE UTILS
-   ============================== */
-function toast(msg, t='') {
-    const el = $('toast');
-    el.textContent = msg;
-    el.style.background = t==='ok'?'#14532D':t==='err'?'#450A0A':'#1E2435';
-    el.style.opacity = 1;
-    setTimeout(() => el.style.opacity = 0, 3000);
+/* ════════════════════════════════
+   UTILS
+   ════════════════════════════════ */
+let toastTimer;
+function toast(msg, type = '') {
+  const el = $('toast');
+  el.textContent = msg;
+  const styles = {
+    ok:   { bg: '#0D2A1A', border: 'rgba(52,211,153,0.3)' },
+    err:  { bg: '#2A0D0D', border: 'rgba(248,113,113,0.3)' },
+    warn: { bg: '#2A1E00', border: 'rgba(251,191,36,0.3)' },
+    '':   { bg: '#1B1D2E', border: 'rgba(255,255,255,0.1)' }
+  };
+  const s = styles[type] || styles[''];
+  el.style.background = s.bg;
+  el.style.borderColor = s.border;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
 }
 
 function switchTab(id, el) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    $(id).classList.add('active');
-    el.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  $(id).classList.add('active');
+  el.classList.add('active');
 }
 
-function resolveVars(body, data={}) {
-    return body
-        .replace(/\{\{name\}\}/gi, data.name || 'Customer')
-        .replace(/\{\{voucher\}\}/gi, data.voucher || 'XXXXXXXX')
-        .replace(/\{\{package\}\}/gi, data.package || 'Standard')
-        .replace(/\{\{phone\}\}/gi, data.phone || '');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function normPhone(p) {
+  p = String(p).replace(/\s+/g, '').replace(/[^\d+]/g, '');
+  if (p.startsWith('0')) p = '+233' + p.slice(1);
+  if (!p.startsWith('+')) p = '+233' + p;
+  return p;
 }
 
-async function callSMS(to, msg) {
-    const url = `${CFG.scriptUrl}?to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}&sender_id=${encodeURIComponent(CFG.senderId)}`;
+function parseCSV(txt) {
+  const lines = txt.trim().split(/\r?\n/);
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  const rows = lines.slice(1).map(line => {
+    const vals = []; let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (vals[i] || '').replace(/^"|"$/g, '').trim());
+    return obj;
+  }).filter(r => Object.values(r).some(v => v));
+  return { headers, rows };
+}
+
+function dlBlob(content, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
+  a.download = name;
+  a.click();
+}
+
+function resolveVars(body, data = {}) {
+  return body
+    .replace(/\{\{name\}\}/gi, data.name || 'Customer')
+    .replace(/\{\{voucher\}\}/gi, data.voucher || data.voucher_code || 'XXXXXXXX')
+    .replace(/\{\{package\}\}/gi, data.package || data.package_name || 'Standard')
+    .replace(/\{\{amount\}\}/gi, data.amount || '0.00')
+    .replace(/\{\{phone\}\}/gi, data.phone || '+233XXXXXXXXX');
+}
+
+function updateStats() {
+  $('statTotal').textContent = contacts.length;
+  $('statSent').textContent = sentCount;
+  $('statFail').textContent = failCount;
+}
+
+/* ════════════════════════════════
+   SMS API CALL (via Google Apps Script)
+   ════════════════════════════════ */
+const STATUS_CODES = {
+  '1000': { ok: true,  label: 'Sent' },
+  '1002': { ok: false, label: 'Failed' },
+  '1003': { ok: false, label: 'Low balance' },
+  '1004': { ok: false, label: 'Invalid API key' },
+  '1005': { ok: false, label: 'Invalid phone' },
+  '1006': { ok: false, label: 'Invalid sender ID' },
+  '1007': { ok: true,  label: 'Scheduled' },
+  '1008': { ok: false, label: 'Empty message' }
+};
+
+async function callSMS(to, msg, attempt = 1) {
+  if (!CFG.scriptUrl || CFG.scriptUrl === 'YOUR_SCRIPT_URL_HERE') {
+    toast('Set your Google Apps Script URL in CFG.scriptUrl', 'err');
+    throw new Error('No script URL configured');
+  }
+  const url = `${CFG.scriptUrl}?to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}&sender_id=${encodeURIComponent(CFG.senderId)}`;
+  try {
     const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     return (await r.text()).trim();
+  } catch (e) {
+    if (attempt <= CFG.retries) {
+      await sleep(600 * attempt);
+      return callSMS(to, msg, attempt + 1);
+    }
+    throw e;
+  }
 }
 
-/* ==============================
-   MESSAGING LOGIC
-   ============================== */
-function countQ() {
-    const l = $('quickMsg').value.length;
-    $('qcc').textContent = l;
-    $('qpg').textContent = Math.ceil(l/160) || 1;
+/* ════════════════════════════════
+   BALANCE CHECK
+   ════════════════════════════════ */
+async function checkBalance() {
+  const btn = $('balBtn');
+  btn.classList.add('loading');
+  $('balSpinner').textContent = '↻';
+  try {
+    const url = `${CFG.scriptUrl}?action=balance`;
+    const r = await fetch(url);
+    const t = (await r.text()).trim();
+    $('balText').textContent = t + ' SMS';
+    $('balDisplay').classList.add('show');
+    toast('Balance: ' + t + ' SMS credits', 'ok');
+  } catch (e) {
+    toast('Could not reach API — check Script URL', 'err');
+  } finally {
+    btn.classList.remove('loading');
+    $('balSpinner').textContent = '↻';
+  }
 }
 
-function countB() {
-    const l = $('msgBody').value.length;
-    $('bcc').textContent = l;
-    $('bpg').textContent = Math.ceil(l/160) || 1;
+/* ════════════════════════════════
+   CHAR COUNTERS
+   ════════════════════════════════ */
+function updateCharCount(lenId, pgId, containerId, length) {
+  $(lenId).textContent = length;
+  $(pgId).textContent = Math.max(1, Math.ceil(length / 160));
+  const el = $(containerId);
+  el.classList.toggle('warn', length > 140 && length <= 160);
+  el.classList.toggle('over', length > 160);
+}
+function countQ() { updateCharCount('qcc', 'qpg', 'qCharCount', $('quickMsg').value.length); }
+function countB() { updateCharCount('bcc', 'bpg', 'bCharCount', $('msgBody').value.length); }
+function countTpl() { $('tplCC').textContent = $('tplBody').value.length; }
+
+/* ════════════════════════════════
+   QUICK MESSAGE
+   ════════════════════════════════ */
+function setQStatus(state, txt) {
+  const dot = $('qStatus'), label = $('qStatusTxt');
+  dot.className = 'status-dot' + (state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
+  label.textContent = txt;
 }
 
 async function sendQuick() {
-    const phone = $('quickPhone').value.trim();
-    const name = $('quickName').value.trim();
-    const msg = $('quickMsg').value.trim();
-    
-    if(!phone || !msg) return toast("Phone and Message required", "err");
+  const rawPhone = $('quickPhone').value.trim();
+  const name = $('quickName').value.trim();
+  const msg = $('quickMsg').value.trim();
+  if (!rawPhone) { toast('Enter a phone number', 'err'); return; }
+  if (!msg) { toast('Enter a message', 'err'); return; }
 
-    const finalMsg = resolveVars(msg, { name, phone });
-    $('qBtn').disabled = true;
-    
-    try {
-        const res = await callSMS(phone, finalMsg);
-        addLog(name || phone, phone, finalMsg, res === '1000');
-        toast("Message Sent!", "ok");
-    } catch(e) {
-        toast("Error sending", "err");
+  const phone = normPhone(rawPhone);
+  const resolved = resolveVars(msg, { name, phone });
+
+  const btn = $('qBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  setQStatus('', 'Sending…');
+
+  try {
+    const code = await callSMS(phone, resolved);
+    const status = STATUS_CODES[code] || { ok: false, label: 'Code: ' + code };
+    addLog(name || phone, phone, resolved, status.ok, status.label);
+    if (status.ok) {
+      sentCount++;
+      setQStatus('ok', 'Sent ✓');
+      toast('Message sent to ' + phone, 'ok');
+    } else {
+      failCount++;
+      setQStatus('err', status.label);
+      toast('Send failed: ' + status.label, 'err');
     }
-    $('qBtn').disabled = false;
+  } catch (e) {
+    failCount++;
+    setQStatus('err', 'Error');
+    toast('Error: ' + e.message, 'err');
+    addLog(name || phone, phone, resolved, false, 'Error');
+  }
+  updateStats();
+  btn.disabled = false;
+  btn.textContent = 'Send ↗';
+}
+
+/* ════════════════════════════════
+   BROADCAST
+   ════════════════════════════════ */
+function getRecipients() {
+  const filter = $('recipientFilter').value;
+  if (filter === 'all') return contacts;
+  const sel = contacts.filter(c => c._selected);
+  return sel.length ? sel : contacts.filter(c => {
+    const tags = (c.tags || '').split(',').map(t => t.trim().toLowerCase());
+    return tags.includes(filter.toLowerCase());
+  });
+}
+
+function updateRCount() {
+  const n = getRecipients().length;
+  $('rCount').textContent = n + ' recipient' + (n !== 1 ? 's' : '');
+}
+
+function previewB() {
+  const msg = $('msgBody').value.trim();
+  if (!msg) { toast('Write a message first', 'err'); return; }
+  const sample = contacts[0] || { name: 'Ama Owusu', phone: '+233241234567', voucher_code: 'DEMO1234', package_name: 'Short', amount: '12.00' };
+  const preview = resolveVars(msg, { ...sample, phone: normPhone(sample.phone || '+233000000000') });
+  alert('Preview for first contact:\n\n' + preview);
+}
+
+function cancelBroadcast() {
+  broadcastCancelled = true;
+  toast('Stopping broadcast…', 'warn');
 }
 
 async function sendBroadcast() {
-    const rawMsg = $('msgBody').value.trim();
-    if(!contacts.length || !rawMsg) return toast("No contacts or message", "err");
+  const msg = $('msgBody').value.trim();
+  if (!msg) { toast('Write a broadcast message', 'err'); return; }
+  const recipients = getRecipients();
+  if (!recipients.length) { toast('No recipients selected', 'err'); return; }
 
-    $('sendBtn').disabled = true;
-    $('progWrap').style.display = 'block';
-    
-    let sent = 0;
-    for(let i=0; i < contacts.length; i++) {
-        const c = contacts[i];
-        const finalMsg = resolveVars(rawMsg, c);
-        
-        try {
-            await callSMS(c.phone, finalMsg);
-            sent++;
-            addLog(c.name, c.phone, finalMsg, true);
-        } catch(e) {
-            addLog(c.name, c.phone, "Failed", false);
-        }
-        
-        let p = Math.round(((i+1)/contacts.length)*100);
-        $('progBar').style.width = p + '%';
-        $('progLabel').textContent = p + '%';
-        await new Promise(r => setTimeout(r, CFG.delay));
+  const confirmed = confirm(`Send to ${recipients.length} contact(s)?`);
+  if (!confirmed) return;
+
+  broadcastCancelled = false;
+  const sendBtn = $('sendBtn');
+  const cancelBtn = $('cancelBtn');
+  sendBtn.disabled = true;
+  cancelBtn.style.display = 'inline-flex';
+  $('progWrap').style.display = 'block';
+
+  let sent = 0, failed = 0;
+
+  for (let i = 0; i < recipients.length; i++) {
+    if (broadcastCancelled) break;
+    const c = recipients[i];
+    const phone = normPhone(c.phone || c.Phone || '');
+    if (!phone || phone.length < 10) {
+      addLog(c.name || '—', phone, '—', false, 'Bad phone');
+      failed++; failCount++;
+      continue;
     }
-    
-    $('sendBtn').disabled = false;
-    toast(`Broadcast Complete: ${sent} sent`, "ok");
+    const resolved = resolveVars(msg, { ...c, phone });
+    const pct = Math.round(((i) / recipients.length) * 100);
+    $('progBar').style.width = pct + '%';
+    $('progPct').textContent = pct + '%';
+    $('progLabel').textContent = `Sending ${i + 1} / ${recipients.length}…`;
+
+    try {
+      const code = await callSMS(phone, resolved);
+      const status = STATUS_CODES[code] || { ok: false, label: 'Code: ' + code };
+      addLog(c.name || phone, phone, resolved, status.ok, status.label);
+      if (status.ok) { sent++; sentCount++; } else { failed++; failCount++; }
+    } catch (e) {
+      addLog(c.name || phone, phone, resolved, false, 'Error');
+      failed++; failCount++;
+    }
+    updateStats();
+    if (i < recipients.length - 1) await sleep(CFG.delay);
+  }
+
+  $('progBar').style.width = '100%';
+  $('progPct').textContent = '100%';
+  $('progLabel').textContent = broadcastCancelled
+    ? `Stopped · ${sent} sent, ${failed} failed`
+    : `Done · ${sent} sent, ${failed} failed`;
+
+  toast(broadcastCancelled
+    ? `Stopped — ${sent} sent, ${failed} failed`
+    : `Broadcast complete — ${sent} sent, ${failed} failed`,
+    failed === 0 ? 'ok' : 'warn'
+  );
+
+  sendBtn.disabled = false;
+  cancelBtn.style.display = 'none';
 }
 
-function addLog(name, phone, msg, ok) {
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    entry.innerHTML = `<span class="badge ${ok?'b-ok':'b-err'}">${ok?'Sent':'Fail'}</span> <b>${name}</b>: ${msg.substring(0,30)}...`;
-    $('sendLog').prepend(entry);
+/* ════════════════════════════════
+   SEND LOG
+   ════════════════════════════════ */
+function addLog(name, phone, msg, ok, label) {
+  sendLog.push({ name, phone, msg, ok, label, time: new Date() });
+  renderLog();
 }
 
-/* ==============================
-   CONTACTS & TEMPLATES
-   ============================== */
-function loadContacts(e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = function(f) {
-        const lines = f.target.result.split('\n');
-        contacts = lines.slice(1).map(l => {
-            const [name, phone, tags, voucher, pkg] = l.split(',');
-            return { name, phone, tags, voucher, package: pkg };
-        }).filter(c => c.phone);
-        
-        updateUI();
-        toast(`${contacts.length} contacts loaded`, "ok");
-    };
-    reader.readAsText(file);
+function renderLog() {
+  const el = $('sendLog');
+  if (!sendLog.length) {
+    el.innerHTML = '<div class="log-empty">No messages sent yet</div>';
+    return;
+  }
+  el.innerHTML = sendLog.slice().reverse().map((e, i) => `
+    <div class="log-entry">
+      <span class="log-idx">${sendLog.length - i}</span>
+      <span class="log-name">${esc(e.name)}</span>
+      <span class="log-phone">${esc(e.phone)}</span>
+      <span class="log-msg" title="${esc(e.msg)}">${esc(e.msg)}</span>
+      <span class="badge ${e.ok ? 'b-ok' : 'b-err'}">${e.label}</span>
+    </div>`).join('');
 }
 
-function updateUI() {
-    $('statTotal').textContent = contacts.length;
-    $('cBody').innerHTML = contacts.map((c, i) => 
-        `<tr><td>${i+1}</td><td>${c.name}</td><td>${c.phone}</td><td>${c.tags}</td></tr>`
-    ).join('');
-    
-    const opts = '<option value="">Select Template</option>' + templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    $('quickTplSel').innerHTML = opts;
-    $('broadTplSel').innerHTML = opts;
-    
-    $('tplList').innerHTML = templates.map(t => `
-        <div class="tpl-card" onclick="this.classList.toggle('selected')">
-            <b>${t.name}</b>
-            <div class="tpl-preview">${t.body}</div>
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function clearLog() {
+  if (!sendLog.length) return;
+  if (confirm('Clear send log?')) { sendLog = []; renderLog(); toast('Log cleared'); }
+}
+
+function exportLog() {
+  if (!sendLog.length) { toast('Nothing to export', 'warn'); return; }
+  const rows = [['#', 'Name', 'Phone', 'Message', 'Status', 'Time']];
+  sendLog.forEach((e, i) => rows.push([
+    i + 1, e.name, e.phone,
+    '"' + e.msg.replace(/"/g, '""') + '"',
+    e.label,
+    e.time.toLocaleString()
+  ]));
+  dlBlob(rows.map(r => r.join(',')).join('\n'), 'novalink_log_' + Date.now() + '.csv');
+}
+
+/* ════════════════════════════════
+   CONTACTS
+   ════════════════════════════════ */
+function cDrop(e) {
+  e.preventDefault();
+  $('cDropZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) loadContactsFile(file);
+}
+
+function loadContacts(event) {
+  loadContactsFile(event.target.files[0]);
+}
+
+function loadContactsFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const { headers, rows } = parseCSV(e.target.result);
+    // Try to find phone column regardless of case
+    const phoneKey = headers.find(h => /phone/i.test(h)) || headers[0];
+    contacts = rows.map(r => ({
+      ...r,
+      phone: r[phoneKey] || r.phone || r.Phone || '',
+      name: r.name || r.Name || '',
+      tags: r.tags || r.Tags || ''
+    })).filter(r => r.phone);
+    updateStats();
+    renderContacts();
+    buildTagFilters();
+    buildRecipientFilter();
+    toast(`Loaded ${contacts.length} contacts`, 'ok');
+  };
+  reader.readAsText(file);
+}
+
+let cFilter = '', cTagFilter = 'all';
+
+function filterC(v) { cFilter = v.toLowerCase(); renderContacts(); }
+
+function buildTagFilters() {
+  const tags = new Set(['all']);
+  contacts.forEach(c => (c.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tags.add(t)));
+  const el = $('tagFilters');
+  el.innerHTML = [...tags].map(t => `
+    <span class="chip ${t === cTagFilter ? 'on' : 'off'}" onclick="setTagFilter('${t}')">${t === 'all' ? 'All' : t}</span>
+  `).join('');
+}
+
+function setTagFilter(t) { cTagFilter = t; buildTagFilters(); renderContacts(); }
+
+function getFilteredContacts() {
+  return contacts.filter(c => {
+    const matchTag = cTagFilter === 'all' || (c.tags || '').split(',').map(x => x.trim()).includes(cTagFilter);
+    const matchSearch = !cFilter ||
+      (c.name || '').toLowerCase().includes(cFilter) ||
+      (c.phone || '').includes(cFilter);
+    return matchTag && matchSearch;
+  });
+}
+
+function renderContacts() {
+  const filtered = getFilteredContacts();
+  $('cCount').textContent = contacts.length;
+  const tbody = $('cBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:28px 0">No contacts found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map((c, i) => `
+    <tr>
+      <td><input type="checkbox" ${c._selected ? 'checked' : ''} onchange="toggleSel(${contacts.indexOf(c)})" /></td>
+      <td style="color:var(--text3);font-size:12px">${i + 1}</td>
+      <td>${esc(c.name || '—')}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${esc(normPhone(c.phone))}</td>
+      <td>${(c.tags || '').split(',').filter(Boolean).map(t => `<span class="tag-chip">${esc(t.trim())}</span>`).join('')}</td>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--text2)">${esc(c.voucher_code || '—')}</td>
+    </tr>`).join('');
+  updateSelCount();
+}
+
+function toggleSel(idx) {
+  contacts[idx]._selected = !contacts[idx]._selected;
+  updateSelCount();
+}
+
+function toggleAll() {
+  const checked = $('selAll').checked;
+  getFilteredContacts().forEach(c => c._selected = checked);
+  renderContacts();
+}
+
+function updateSelCount() {
+  const n = contacts.filter(c => c._selected).length;
+  $('selCount').textContent = n + ' selected';
+}
+
+function clearContacts() {
+  if (!contacts.length) return;
+  if (confirm('Remove all contacts?')) {
+    contacts = [];
+    renderContacts();
+    buildTagFilters();
+    buildRecipientFilter();
+    updateStats();
+    toast('Contacts cleared');
+  }
+}
+
+function goMsg() {
+  const sel = contacts.filter(c => c._selected);
+  if (!sel.length) { toast('Select contacts first', 'warn'); return; }
+  $('recipientFilter').value = 'selected';
+  updateRCount();
+  switchTab('messaging', document.querySelectorAll('.tab')[0]);
+  toast(sel.length + ' contacts ready to message');
+}
+
+function buildRecipientFilter() {
+  const tags = new Set();
+  contacts.forEach(c => (c.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tags.add(t)));
+  const sel = $('recipientFilter');
+  sel.innerHTML = '<option value="all">All contacts</option>' +
+    '<option value="selected">Selected contacts</option>' +
+    [...tags].map(t => `<option value="${t}">${t}</option>`).join('');
+  updateRCount();
+}
+
+function dlTemplate() {
+  dlBlob('name,phone,tags,voucher_code,package_name,amount\nAma Owusu,0241234567,customer,ABCD1234,Short,12.00\n', 'novalink_template.csv');
+}
+
+/* ════════════════════════════════
+   CSV CONVERTER
+   ════════════════════════════════ */
+const PRESETS = {
+  hotspot: {
+    label: 'Hotspot → Voucher Sheet',
+    cols: ['name', 'phone', 'voucher_code', 'package_name', 'amount']
+  },
+  contacts: {
+    label: 'Contact Importer',
+    cols: ['name', 'phone', 'tags']
+  },
+  custom: {
+    label: 'Custom',
+    cols: []
+  }
+};
+
+function vDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag');
+  loadConvCSVFile(e.dataTransfer.files[0]);
+}
+
+function loadConvCSV(ev) { loadConvCSVFile(ev.target.files[0]); }
+
+function loadConvCSVFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    conv = parseCSV(e.target.result);
+    $('srcCols').innerHTML = conv.headers.map(h =>
+      `<span class="chip off">${h}</span>`).join('');
+    $('srcRowCount').textContent = conv.rows.length + ' rows detected';
+    applyPreset($('presetSel').value);
+    toast('CSV loaded: ' + conv.rows.length + ' rows', 'ok');
+  };
+  reader.readAsText(file);
+}
+
+function applyPreset(preset) {
+  const p = PRESETS[preset] || PRESETS.custom;
+  const el = $('outColsPreview');
+  el.innerHTML = p.cols.map(c => `<span class="chip on">${c}</span>`).join('') || '<span style="color:var(--text3);font-size:12px">Define below</span>';
+  convMap = {};
+  const mr = $('mapRows');
+  mr.innerHTML = '';
+  if (preset !== 'custom') {
+    p.cols.forEach(col => {
+      const src = conv.headers.find(h => h.toLowerCase().replace(/[\s_]/g, '') === col.toLowerCase().replace(/[\s_]/g, '')) || '';
+      convMap[col] = src;
+      addMapRow(col, src);
+    });
+  }
+  updateConvPreview();
+}
+
+function addMapRow(outName = '', srcName = '') {
+  const id = 'mr_' + Date.now() + Math.random().toString(36).slice(2);
+  const div = document.createElement('div');
+  div.className = 'map-row';
+  div.id = id;
+  const srcOpts = ['', ...conv.headers].map(h =>
+    `<option value="${h}" ${h === srcName ? 'selected' : ''}>${h || '— skip —'}</option>`).join('');
+  div.innerHTML = `
+    <input class="fi" placeholder="Output column name" value="${outName}" oninput="updateConvPreview()" style="font-size:12px;padding:7px 10px"/>
+    <div class="map-arrow">←</div>
+    <select class="fi" onchange="updateConvPreview()" style="font-size:12px;padding:7px 10px">${srcOpts}</select>
+    <button class="btn btn-danger btn-sm" style="padding:6px 9px" onclick="document.getElementById('${id}').remove();updateConvPreview()">✕</button>`;
+  $('mapRows').appendChild(div);
+  updateConvPreview();
+}
+
+function getConvMapping() {
+  const rows = $('mapRows').querySelectorAll('.map-row');
+  const map = {};
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input,select');
+    const outCol = inputs[0].value.trim();
+    const srcCol = inputs[1].value;
+    if (outCol) map[outCol] = srcCol;
+  });
+  return map;
+}
+
+function updateConvPreview() {
+  const map = getConvMapping();
+  const outHeaders = Object.keys(map);
+  if (!outHeaders.length || !conv.rows.length) {
+    $('convPreview').textContent = 'Configure mapping above…';
+    $('convRowCount').textContent = '0 rows';
+    return;
+  }
+  convOut = conv.rows.map(row => {
+    const out = {};
+    outHeaders.forEach(h => { out[h] = map[h] ? (row[map[h]] || '') : ''; });
+    return out;
+  });
+  const preview = [outHeaders.join(','),
+    ...convOut.slice(0, 5).map(r => outHeaders.map(h => `"${(r[h] || '').replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
+  $('convPreview').textContent = preview;
+  $('convRowCount').textContent = convOut.length + ' rows';
+}
+
+function copyPreview() {
+  navigator.clipboard.writeText($('convPreview').textContent).then(() => toast('Copied!', 'ok'));
+}
+
+function importAsContacts() {
+  if (!convOut.length) { toast('No converted data', 'err'); return; }
+  const phoneKey = Object.keys(convOut[0]).find(k => /phone/i.test(k));
+  if (!phoneKey) { toast('No phone column in output', 'err'); return; }
+  contacts = convOut.filter(r => r[phoneKey]).map(r => ({
+    ...r, phone: r[phoneKey],
+    name: r.name || r.Name || '',
+    tags: r.tags || r.Tags || ''
+  }));
+  buildTagFilters();
+  buildRecipientFilter();
+  updateStats();
+  switchTab('contacts', document.querySelectorAll('.tab')[1]);
+  renderContacts();
+  toast(`Imported ${contacts.length} contacts`, 'ok');
+}
+
+function dlConverted() {
+  if (!convOut.length) { toast('Nothing to download', 'err'); return; }
+  const headers = Object.keys(convOut[0]);
+  const csv = [headers.join(','),
+    ...convOut.map(r => headers.map(h => `"${(r[h] || '').replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
+  dlBlob(csv, 'novalink_converted_' + Date.now() + '.csv');
+}
+
+/* ════════════════════════════════
+   TEMPLATES
+   ════════════════════════════════ */
+function renderTplList() {
+  const el = $('tplList');
+  if (!templates.length) {
+    el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:24px">No templates</div>';
+    return;
+  }
+  el.innerHTML = templates.map(t => `
+    <div class="tpl-card" id="tc_${t.id}" onclick="toggleTplCard('${t.id}')">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div class="tpl-name">${esc(t.name)}</div>
+          <div class="tpl-desc">${esc(t.body.slice(0, 60).replace(/\n/g, ' '))}…</div>
         </div>
-    `).join('');
+        <div class="tpl-badge">
+          <span class="badge b-info">${t.category}</span>
+          <button onclick="event.stopPropagation();editTpl('${t.id}')" class="btn btn-outline btn-sm" style="font-size:11px">Edit</button>
+          ${!BUILTIN_TEMPLATES.find(b => b.id === t.id)
+            ? `<button onclick="event.stopPropagation();deleteTpl('${t.id}')" class="btn btn-danger btn-sm" style="font-size:11px">Del</button>` : ''}
+        </div>
+      </div>
+      <div class="tpl-preview">${t.body.replace(/\{\{(\w+)\}\}/g, '<span class="var-tag">{{$1}}</span>').replace(/\n/g, '<br>')}</div>
+    </div>`).join('');
+
+  const opts = '<option value="">— choose template —</option>' +
+    templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  $('quickTplSel').innerHTML = opts;
+  $('broadTplSel').innerHTML = opts;
 }
 
-function applyTplToQuick() {
-    const t = templates.find(x => x.id === $('quickTplSel').value);
-    if(t) { $('quickMsg').value = t.body; countQ(); }
-}
-
-function applyTplToBroad() {
-    const t = templates.find(x => x.id === $('broadTplSel').value);
-    if(t) { $('msgBody').value = t.body; countB(); }
+function toggleTplCard(id) {
+  const el = $('tc_' + id);
+  const wasSelected = el.classList.contains('selected');
+  document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
+  if (!wasSelected) el.classList.add('selected');
 }
 
 function saveTpl() {
-    const name = $('tplName').value;
-    const body = $('tplBody').value;
-    if(!name || !body) return;
-    templates.push({ id: 't'+Date.now(), name, body });
-    updateUI();
-    toast("Template Saved", "ok");
+  const name = $('tplName').value.trim();
+  const body = $('tplBody').value.trim();
+  const cat = $('tplCat').value;
+  if (!name) { toast('Enter a template name', 'err'); return; }
+  if (!body) { toast('Enter a message body', 'err'); return; }
+  if (editingTplId) {
+    const t = templates.find(x => x.id === editingTplId);
+    if (t) { t.name = name; t.body = body; t.category = cat; }
+  } else {
+    templates.push({ id: 'tpl_' + Date.now(), name, category: cat, body });
+  }
+  resetTplForm();
+  renderTplList();
+  toast('Template saved', 'ok');
 }
 
-window.onload = updateUI;
+function editTpl(id) {
+  const t = templates.find(x => x.id === id);
+  if (!t) return;
+  editingTplId = id;
+  $('tplName').value = t.name;
+  $('tplBody').value = t.body;
+  $('tplCat').value = t.category;
+  countTpl();
+  switchTab('templates', document.querySelectorAll('.tab')[3]);
+  $('tplName').focus();
+  toast('Editing: ' + t.name, 'warn');
+}
+
+function deleteTpl(id) {
+  if (!confirm('Delete this template?')) return;
+  templates = templates.filter(t => t.id !== id);
+  renderTplList();
+  toast('Template deleted');
+}
+
+function resetTplForm() {
+  editingTplId = null;
+  $('tplName').value = '';
+  $('tplBody').value = '';
+  $('tplCC').textContent = '0';
+  $('tplPreviewOut').style.display = 'none';
+}
+
+function previewTpl() {
+  const body = $('tplBody').value.trim();
+  if (!body) { toast('Write a template first', 'err'); return; }
+  const sample = { name: 'Ama Owusu', voucher: 'nnby2835', package: 'Short', amount: '12.00', phone: '+233241234567' };
+  $('tplPreviewBox').textContent = resolveVars(body, sample);
+  $('tplPreviewOut').style.display = 'block';
+}
+
+function applyTplToQuick() {
+  const id = $('quickTplSel').value;
+  if (!id) return;
+  const t = templates.find(x => x.id === id);
+  if (!t) return;
+  $('quickMsg').value = t.body;
+  countQ();
+  toast('Template applied');
+}
+
+function applyTplToBroad() {
+  const id = $('broadTplSel').value;
+  if (!id) return;
+  const t = templates.find(x => x.id === id);
+  if (!t) return;
+  $('msgBody').value = t.body;
+  countB();
+  toast('Template applied');
+}
+
+/* ════════════════════════════════
+   INIT
+   ════════════════════════════════ */
+renderTplList();
+updateStats();
+updateRCount();
 </script>
 </body>
 </html>
