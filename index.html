@@ -6,6 +6,16 @@
 <title>NovaLink SMS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    const CFG = {
+  // Paste your deployed Google Apps Script URL below:
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbyoV8iCduvVOCrjP6hHbtA4XynREahpmOhCKBd69QR9bok04jztWTCHkzDSbb2BplUp/exec',
+  senderId: 'NovaLink',
+  delay: 450,       // ms between sends (avoid rate limiting)
+  retries: 2        // auto-retry failed sends
+};
+  </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
