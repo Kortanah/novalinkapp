@@ -913,7 +913,7 @@ const STATUS_CODES = {
 };
 
 async function callSMS(to, msg, attempt = 1) {
-  if (!CFG.scriptUrl || CFG.scriptUrl === 'https://script.google.com/macros/s/AKfycbyoV8iCduvVOCrjP6hHbtA4XynREahpmOhCKBd69QR9bok04jztWTCHkzDSbb2BplUp/exec') {
+  if (!CFG.scriptUrl || CFG.scriptUrl.includes('...')) {
     toast('Set your Google Apps Script URL in CFG.scriptUrl', 'err');
     throw new Error('No script URL configured');
   }
