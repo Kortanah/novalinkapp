@@ -1,24 +1,20 @@
-name: Deploy to GitHub Pages
-
+name: Deploy to Pages
 on:
   push:
-    branches: ["main"]
+    branches: [main]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Inject API Key
+      - name: Inject API key
         run: |
-          # This swaps the placeholder with your actual secret
-          sed -i "s/REPLACE_ME_WITH_KEY/${{ secrets.MY_SMS_API }}/g" index.html
+          sed -i "s/YOUR_API_KEY_HERE/${{ secrets.MY_SMS_API }}/g" index.html
 
-      - name: Deploy to GitHub Pages
-        uses: Peaceiris/actions-gh-pages@v3
+      - name: Deploy to Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
-          publish_branch: gh-pages
