@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BloggerReach</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#185FA5;--blue-light:#E6F1FB;--blue-dark:#0C447C;
+  --green-light:#EAF3DE;--green-dark:#3B6D11;
+  --amber-light:#FAEEDA;--amber-dark:#854F0B;
+  --red-light:#FCEBEB;--red-dark:#A32D2D;
+  --border:#E0DDD6;--text:#1A1A18;--text2:#6B6966;--text3:#9B9895;
+  --card:#FFFFFF;--surface:#F4F2EC;--radius:10px;--radius-sm:6px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F8F6;color:var(--text);font-size:14px;min-height:100vh}
+.topbar{background:var(--card);border-bottom:0.5px solid var(--border);padding:0 20px;height:50px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.logo{font-size:15px;font-weight:600}.logo span{color:var(--blue)}
+.bal-pill{margin-left:auto;background:var(--blue-light);color:var(--blue-dark);font-size:12px;font-weight:500;padding:4px 14px;border-radius:99px;cursor:pointer;border:none;font-family:inherit}
+.bal-pill:hover{background:#d0e5f7}
+.container{max-width:920px;margin:0 auto;padding:20px 14px}
+.tabs{display:flex;gap:2px;background:var(--surface);border-radius:var(--radius);padding:4px;margin-bottom:18px}
+.tab{flex:1;text-align:center;padding:8px 8px;border-radius:var(--radius-sm);border:none;background:transparent;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.slabel{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px}
+.fi{width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;color:var(--text);background:var(--card);outline:none}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(24,95,165,.12)}
+textarea.fi{min-height:84px;resize:vertical;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.btn{padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;display:inline-block}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-dark)}
+.btn-primary:disabled{background:#aac4e0;cursor:not-allowed}
+.btn-outline{background:transparent;border:0.5px solid var(--border);color:var(--text)}.btn-outline:hover{background:var(--surface)}
+.btn-danger{background:var(--red-light);color:var(--red-dark);border:none}
+.btn-success{background:var(--green-light);color:var(--green-dark);border:none}
+.stat{background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px}
+.stat-val{font-size:22px;font-weight:600;color:var(--text)}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:2px}
+.frow{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:8px;flex-wrap:wrap}
+.upload-zone{border:1.5px dashed var(--border);border-radius:var(--radius);padding:22px;text-align:center;cursor:pointer;background:var(--surface);transition:border-color .15s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue)}
+.uico{font-size:24px;margin-bottom:6px}
+.utitle{font-weight:500;font-size:13px;color:var(--text);margin-bottom:3px}
+.usub{font-size:12px;color:var(--text3)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:0.5px solid var(--border)}
+td{padding:9px 10px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface)}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px}
+.b-ok{background:var(--green-light);color:var(--green-dark)}
+.b-err{background:var(--red-light);color:var(--red-dark)}
+.b-info{background:var(--blue-light);color:var(--blue-dark)}
+.tag-chip{display:inline-block;background:var(--blue-light);color:var(--blue-dark);font-size:11px;padding:2px 8px;border-radius:99px;margin:2px}
+.chip{font-size:12px;padding:3px 10px;border-radius:99px;cursor:pointer;display:inline-block}
+.chip.on{background:var(--blue-light);color:var(--blue-dark);font-weight:500}
+.chip.off{background:var(--surface);color:var(--text2)}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.prog-bg{background:var(--surface);border-radius:99px;height:6px;overflow:hidden;margin:6px 0}
+.prog-bar{height:100%;background:var(--blue);border-radius:99px;transition:width .3s}
+.char-count{font-size:11px;color:var(--text3);text-align:right;margin-top:3px}
+.log-entry{padding:8px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px}
+.log-entry:last-child{border-bottom:none}
+.log-name{font-weight:500;min-width:80px;white-space:nowrap}
+.log-phone{color:var(--text3);font-family:monospace;min-width:110px;white-space:nowrap}
+.log-msg{color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-bar{padding:7px 10px;border:0.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;background:var(--card);width:190px}
+.search-bar:focus{border-color:var(--blue)}
+.divider{border:none;border-top:0.5px solid var(--border);margin:14px 0}
+.map-row{display:grid;grid-template-columns:1fr 20px 1fr 28px;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+.map-arrow{text-align:center;color:var(--text3)}
+.preview-box{background:var(--surface);border-radius:var(--radius-sm);padding:12px;font-family:'Courier New',monospace;font-size:12px;color:var(--text2);min-height:70px;white-space:pre;overflow-x:auto}
+.conv-cols{display:grid;grid-template-columns:1fr 32px 1fr;gap:10px;align-items:start}
+.arrow-mid{display:flex;align-items:center;justify-content:center;padding-top:34px;font-size:20px;color:var(--text3)}
+input[type=file]{display:none}
+@media(max-width:600px){.grid2,.grid3,.conv-cols{grid-template-columns:1fr}.arrow-mid{display:none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span>Blogger</span>Reach</div>
+  <button class="bal-pill" id="balBtn" onclick="checkBalance()">⟳ SMS Balance</button>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('messaging',this)">Messaging</button>
+    <button class="tab" onclick="switchTab('contacts',this)">Contacts</button>
+    <button class="tab" onclick="switchTab('converter',this)">CSV Converter</button>
+  </div>
+
+  <!-- ===== MESSAGING ===== -->
+  <div id="messaging" class="panel active">
+    <div class="grid3" style="margin-bottom:14px">
+      <div class="stat"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Contacts loaded</div></div>
+      <div class="stat"><div class="stat-val" id="statSent">0</div><div class="stat-lbl">Sent this session</div></div>
+      <div class="stat"><div class="stat-val" id="statFail">0</div><div class="stat-lbl">Failed</div></div>
+    </div>
+
+    <!-- QUICK MESSAGE -->
+    <div class="card">
+      <div class="slabel">Quick message — single recipient</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Phone number</label>
+          <input type="tel" id="quickPhone" class="fi" placeholder="024... or +233..." />
+        </div>
+        <div class="field">
+          <label>Name <span style="color:var(--text3)">(optional)</span></label>
+          <input type="text" id="quickName" class="fi" placeholder="Recipient name" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Message <span style="color:var(--text3)">— use {{name}} to personalise</span></label>
+        <textarea id="quickMsg" class="fi" placeholder="Type your message..." oninput="countQ()"></textarea>
+        <div class="char-count"><span id="qcc">0</span>/160 &nbsp;|&nbsp; <span id="qpg">1</span> SMS page(s)</div>
+      </div>
+      <div class="frow">
+        <span></span>
+        <button class="btn btn-primary" id="qBtn" onclick="sendQuick()">Send message</button>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- BROADCAST -->
+    <div class="card">
+      <div class="slabel">Broadcast — send to contacts</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Campaign name</label>
+          <input type="text" id="campaignName" class="fi" placeholder="e.g. April promo" />
+        </div>
+        <div class="field">
+          <label>Recipients</label>
+          <select id="recipientFilter" class="fi" onchange="updateRCount()">
+            <option value="all">All contacts</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Message <span style="color:var(--text3)">— use {{name}} to personalise</span></label>
+        <textarea id="msgBody" class="fi" placeholder="Type broadcast message..." oninput="countB()"></textarea>
+        <div class="char-count"><span id="bcc">0</span>/160 &nbsp;|&nbsp; <span id="bpg">1</span> SMS page(s)</div>
+      </div>
+      <div class="frow">
+        <span style="font-size:12px;color:var(--text3)" id="rCount">0 recipients</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" onclick="previewB()">Preview</button>
+          <button class="btn btn-primary" id="sendBtn" onclick="sendBroadcast()">Send broadcast</button>
+        </div>
+      </div>
+      <div id="progWrap" style="display:none;margin-top:10px">
+        <div style="font-size:12px;color:var(--text2)" id="progLabel">Sending...</div>
+        <div class="prog-bg"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="slabel" style="margin:0">Send log</div>
+        <button class="btn btn-outline" style="font-size:12px;padding:5px 10px" onclick="clearLog()">Clear</button>
+      </div>
+      <div id="sendLog" style="max-height:260px;overflow-y:auto">
+        <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">No messages sent yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CONTACTS ===== -->
+  <div id="contacts" class="panel">
+    <div class="card">
+      <div class="slabel">Upload contacts CSV</div>
+      <div class="upload-zone" id="cDropZone"
+        onclick="document.getElementById('cFile').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="cDrop(event)">
+        <div class="uico">📂</div>
+        <div class="utitle">Drop CSV or click to browse</div>
+        <div class="usub">Phone-only CSV works · Also accepts name, phone, tags columns</div>
+      </div>
+      <input type="file" id="cFile" accept=".csv" onchange="loadContacts(event)" />
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-outline" style="font-size:12px" onclick="dlTemplate()">Download template</button>
+        <span style="font-size:12px;color:var(--text3)">phone only, or: name, phone, tags</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div class="slabel" style="margin:0">Contacts (<span id="cCount">0</span>)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="search-bar" type="text" placeholder="Search..." oninput="filterC(this.value)" />
+          <button class="btn btn-danger" style="font-size:12px;padding:6px 10px" onclick="clearContacts()">Clear all</button>
+        </div>
+      </div>
+      <div class="chip-row" id="tagFilters"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th><input type="checkbox" id="selAll" onchange="toggleAll()" /></th>
+            <th>#</th><th>Name</th><th>Phone</th><th>Tags</th>
+          </tr></thead>
+          <tbody id="cBody">
+            <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px 0">No contacts loaded</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="frow">
+        <span style="font-size:12px;color:var(--text3)" id="selCount">0 selected</span>
+        <button class="btn btn-primary" onclick="goMsg()">Message selected ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CSV CONVERTER ===== -->
+  <div id="converter" class="panel">
+    <div class="card">
+      <div class="slabel">CSV structure converter</div>
+
+      <div class="conv-cols">
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px">Source CSV</div>
+          <div class="upload-zone"
+            onclick="document.getElementById('vFile').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="vDrop(event)" style="padding:16px">
+            <div class="uico" style="font-size:20px">📄</div>
+            <div class="usub">Click or drop CSV</div>
+          </div>
+          <input type="file" id="vFile" accept=".csv" onchange="loadConvCSV(event)" />
+          <div style="font-size:12px;color:var(--text3);margin-top:8px;margin-bottom:4px">Detected columns:</div>
+          <div class="chip-row" id="srcCols"><span style="color:var(--text3);font-size:12px">None</span></div>
+          <div style="font-size:12px;color:var(--text3)" id="srcRowCount"></div>
+        </div>
+
+        <div class="arrow-mid">→</div>
+
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px">Output preset</div>
+          <select id="presetSel" class="fi" onchange="applyPreset(this.value)" style="margin-bottom:8px">
+            <option value="hotspot">Hotspot export → Voucher sheet</option>
+            <option value="contacts">Contact importer (name, phone, tags)</option>
+            <option value="custom">Custom mapping</option>
+          </select>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Output columns:</div>
+          <div class="chip-row" id="outColsPreview"></div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="slabel">Column mapping</div>
+      <div id="mapRows"></div>
+      <button class="btn btn-outline" style="font-size:12px;margin-top:6px" onclick="addMapRow()">+ Add output column</button>
+
+      <div style="margin-top:16px">
+        <div class="slabel">Output preview (first 5 rows)</div>
+        <div class="preview-box" id="convPreview">Upload a source CSV to begin...</div>
+      </div>
+
+      <div class="frow" style="margin-top:12px">
+        <span style="font-size:12px;color:var(--text3)" id="convRowCount">0 rows</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="copyPreview()">Copy preview</button>
+          <button class="btn btn-success" onclick="importAsContacts()">Import as contacts</button>
+          <button class="btn btn-primary" onclick="dlConverted()">Download CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" style="position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:11px 16px;border-radius:var(--radius);font-size:13px;z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;max-width:300px;pointer-events:none"></div>
+
+<script>
+/* CONFIG — edit these */
+const CFG = { apiKey:'YOUR_API_KEY_HERE', senderId:'BlogReach', delay:400 };
+
+/* STATE */
+let contacts=[], sendLog=[], activeTag='all';
+let conv={ headers:[], rows:[] }, convOut=[], convMap={};
+
+const $=id=>document.getElementById(id);
+
+function toast(msg,t=''){
+  const el=$('toast');
+  el.textContent=msg;
+  el.style.background=t==='ok'?'#1D6E3A':t==='err'?'#A32D2D':'#1A1A18';
+  el.style.opacity=1;el.style.transform='translateY(0)';
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>{el.style.opacity=0;el.style.transform='translateY(8px)'},3400);
+}
+
+function switchTab(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  $(id).classList.add('active');el.classList.add('active');
+}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function normPhone(p){
+  p=String(p).replace(/\s+/g,'').replace(/[^\d+]/g,'');
+  if(p.startsWith('0'))p='+233'+p.slice(1);
+  if(!p.startsWith('+'))p='+233'+p;
+  return p;
+}
+
+function parseCSV(txt){
+  const lines=txt.trim().split(/\r?\n/);
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  const rows=lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(const ch of line){
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    vals.push(cur.trim());
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,'').trim());
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v));
+  return{headers,rows};
+}
+
+function dlBlob(content,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type:'text/csv'}));
+  a.download=name;a.click();
+}
+
+/* BALANCE */
+async function checkBalance(){
+  $('balBtn').textContent='⟳ Checking...';
+  try{
+    const r=await fetch(`https://clientlogin.bulksmsgh.com/api/smsapibalance?key=${encodeURIComponent(CFG.apiKey)}`);
+    const t=(await r.text()).trim();
+    $('balBtn').textContent='Balance: '+t+' SMS';
+    toast('Balance: '+t+' SMS credits','ok');
+  }catch(e){$('balBtn').textContent='⟳ SMS Balance';toast('Could not reach API','err');}
+}
+
+const CODES={'1000':{ok:true,l:'Sent'},'1002':{ok:false,l:'Failed'},'1003':{ok:false,l:'Low balance'},
+  '1004':{ok:false,l:'Invalid API key'},'1005':{ok:false,l:'Invalid phone'},
+  '1006':{ok:false,l:'Invalid sender ID'},'1007':{ok:true,l:'Scheduled'},'1008':{ok:false,l:'Empty message'}};
+
+async function callSMS(to,msg){
+  const url=`https://clientlogin.bulksmsgh.com/smsapi?key=${encodeURIComponent(CFG.apiKey)}&to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}&sender_id=${encodeURIComponent(CFG.senderId)}`;
+  const r=await fetch(url);return(await r.text()).trim();
+}
+
+/* QUICK */
+function countQ(){const l=$('quickMsg').value.length;$('qcc').textContent=l;$('qpg').textContent=Math.max(1,Math.ceil(l/160));}
+async function sendQuick(){
+  const phone=$('quickPhone').value.trim(),name=$('quickName').value.trim(),msg=$('quickMsg').value.trim();
+  if(!phone){toast('Enter a phone number','err');return;}
+  if(!msg){toast('Write a message','err');return;}
+  const to=normPhone(phone),finalMsg=msg.replace(/\{\{name\}\}/gi,name||'Friend');
+  const btn=$('qBtn');btn.disabled=true;btn.textContent='Sending...';
+  try{
+    const code=await callSMS(to,finalMsg);
+    const r=CODES[code]||{ok:false,l:'Code '+code};
+    addLog({name,phone:to,msg:finalMsg,ok:r.ok,label:r.l});
+    toast(r.l,r.ok?'ok':'err');
+  }catch(e){addLog({name,phone:to,msg:finalMsg,ok:false,label:'Network error'});toast('Network error','err');}
+  btn.disabled=false;btn.textContent='Send message';
+  updateStats();
+}
+
+/* BROADCAST */
+function countB(){const l=$('msgBody').value.length;$('bcc').textContent=l;$('bpg').textContent=Math.max(1,Math.ceil(l/160));}
+function updateRCount(){
+  const f=$('recipientFilter').value;
+  const n=(f==='all'?contacts.filter(c=>c.selected):contacts.filter(c=>c.selected&&c.tags.includes(f))).length;
+  $('rCount').textContent=n+' recipient'+(n!==1?'s':'');
+}
+function previewB(){
+  const msg=$('msgBody').value.trim();if(!msg){toast('Write a message first','err');return;}
+  const s=contacts.find(c=>c.selected);
+  const pv=msg.replace(/\{\{name\}\}/gi,s?.name||'Friend');
+  toast('Preview: '+pv.slice(0,80)+(pv.length>80?'...':''));
+}
+async function sendBroadcast(){
+  const msg=$('msgBody').value.trim(),f=$('recipientFilter').value;
+  if(!msg){toast('Write a message','err');return;}
+  let recips=contacts.filter(c=>c.selected);
+  if(f!=='all')recips=recips.filter(c=>c.tags.includes(f));
+  if(!recips.length){toast('No recipients selected','err');return;}
+  if(!confirm(`Send to ${recips.length} contact${recips.length!==1?'s':''}?`))return;
+  $('sendBtn').disabled=true;$('progWrap').style.display='block';
+  for(let i=0;i<recips.length;i++){
+    const c=recips[i],finalMsg=msg.replace(/\{\{name\}\}/gi,c.name||'Friend');
+    $('progLabel').textContent=`Sending ${i+1} / ${recips.length} — ${c.name||c.phone}`;
+    $('progBar').style.width=Math.round(((i+1)/recips.length)*100)+'%';
+    let ok=false,label='Error';
+    try{const code=await callSMS(c.phone,finalMsg);const r=CODES[code]||{ok:false,l:'Code '+code};ok=r.ok;label=r.l;}
+    catch(e){label='Network error';}
+    addLog({name:c.name,phone:c.phone,msg:finalMsg,ok,label});
+    updateStats();
+    if(i<recips.length-1)await sleep(CFG.delay);
+  }
+  $('sendBtn').disabled=false;$('progWrap').style.display='none';
+  const s=sendLog.filter(l=>l.ok).length;
+  toast(`Done! ${s} sent, ${sendLog.length-s} failed`,s>0?'ok':'err');
+}
+
+/* LOG */
+function addLog(e){sendLog.unshift({...e,time:new Date()});renderLog();}
+function renderLog(){
+  const el=$('sendLog');
+  if(!sendLog.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">No messages sent yet</div>';return;}
+  el.innerHTML=sendLog.slice(0,60).map(l=>`
+    <div class="log-entry">
+      <span class="log-name">${l.name||'—'}</span>
+      <span class="log-phone">${l.phone}</span>
+      <span class="log-msg">${l.msg}</span>
+      <span class="badge ${l.ok?'b-ok':'b-err'}" style="white-space:nowrap">${l.label}</span>
+      <span style="color:var(--text3);font-size:11px;white-space:nowrap">${l.time.toLocaleTimeString()}</span>
+    </div>`).join('');
+}
+function clearLog(){sendLog=[];renderLog();updateStats();}
+function updateStats(){
+  $('statTotal').textContent=contacts.length;
+  $('statSent').textContent=sendLog.filter(l=>l.ok).length;
+  $('statFail').textContent=sendLog.filter(l=>!l.ok).length;
+}
+
+/* CONTACTS */
+function loadContacts(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const{headers,rows}=parseCSV(e.target.result);
+    const pCol=headers.find(h=>/phone|mobile|number|tel/i.test(h))||headers[0];
+    const nCol=headers.find(h=>/^name/i.test(h));
+    const tCol=headers.find(h=>/tag|group|label/i.test(h));
+    contacts=rows.map((r,i)=>({
+      id:contacts.length+i,
+      name:nCol?r[nCol]:'',
+      phone:normPhone(r[pCol]||''),
+      tags:tCol&&r[tCol]?r[tCol].split(/[;|,]/).map(t=>t.trim()).filter(Boolean):[],
+      selected:true
+    })).filter(c=>c.phone.length>6);
+    renderC();updateStats();updateRFilter();updateRCount();
+    toast(contacts.length+' contacts loaded','ok');
+  };
+  reader.readAsText(file);
+}
+function cDrop(e){
+  e.preventDefault();$('cDropZone').classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f)loadContacts({target:{files:[f]}});
+}
+function renderC(search='',tag=activeTag){
+  const tbody=$('cBody');
+  let list=contacts;
+  if(tag!=='all')list=list.filter(c=>c.tags.includes(tag));
+  if(search)list=list.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())||c.phone.includes(search));
+  if(!list.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px 0">No contacts</td></tr>';updSelCount();return;}
+  tbody.innerHTML=list.map((c,i)=>`
+    <tr>
+      <td><input type="checkbox" ${c.selected?'checked':''} onchange="togC(${c.id})" /></td>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td>${c.name||'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-family:monospace;font-size:12px">${c.phone}</td>
+      <td>${c.tags.map(t=>`<span class="tag-chip">${t}</span>`).join('')}</td>
+    </tr>`).join('');
+  $('cCount').textContent=contacts.length;
+  updSelCount();renderTagFilters();
+}
+function renderTagFilters(){
+  const tags=[...new Set(contacts.flatMap(c=>c.tags))];
+  $('tagFilters').innerHTML=['all',...tags].map(t=>
+    `<span class="chip ${activeTag===t?'on':'off'}" onclick="setTag('${t}')">${t==='all'?'All':t}</span>`
+  ).join('');
+}
+function setTag(t){activeTag=t;renderC(document.querySelector('.search-bar')?.value||'',t);}
+function togC(id){const c=contacts.find(x=>x.id===id);if(c){c.selected=!c.selected;updSelCount();updateStats();updateRCount();}}
+function toggleAll(){const v=$('selAll').checked;contacts.forEach(c=>c.selected=v);renderC();updateStats();updateRCount();}
+function filterC(v){renderC(v);}
+function updSelCount(){$('selCount').textContent=contacts.filter(c=>c.selected).length+' selected';}
+function clearContacts(){if(!confirm('Clear all contacts?'))return;contacts=[];renderC();updateStats();updateRFilter();updateRCount();}
+function goMsg(){switchTab('messaging',document.querySelectorAll('.tab')[0]);toast('Go to Broadcast section to send');}
+function dlTemplate(){dlBlob('name,phone,tags\nAma Owusu,0241234567,VIP\nKofi Mensah,0200001234,','contacts_template.csv');}
+function updateRFilter(){
+  const s=$('recipientFilter'),tags=[...new Set(contacts.flatMap(c=>c.tags))];
+  s.innerHTML=`<option value="all">All contacts (${contacts.length})</option>`+
+    tags.map(t=>`<option value="${t}">${t} (${contacts.filter(c=>c.tags.includes(t)).length})</option>`).join('');
+}
+
+/* CONVERTER */
+const PRESETS={
+  hotspot:{
+    cols:['voucher_code','status','package_name','amount','phone','reference','date_used','sms_status'],
+    defaults:{voucher_code:'',status:'UNUSED',package_name:'',amount:'',phone:'',reference:'',date_used:'',sms_status:''},
+    auto:{voucher_code:'Username',package_name:'Profile'}
+  },
+  contacts:{
+    cols:['name','phone','tags'],
+    defaults:{name:'',phone:'',tags:''},
+    auto:{name:'Username',phone:'',tags:'Profile'}
+  },
+  custom:null
+};
+
+function loadConvCSV(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    conv=parseCSV(e.target.result);
+    $('srcCols').innerHTML=conv.headers.map(h=>`<span class="chip on" style="cursor:default">${h}</span>`).join('');
+    $('srcRowCount').textContent=conv.rows.length+' rows detected';
+    $('convRowCount').textContent=conv.rows.length+' rows';
+    applyPreset($('presetSel').value);
+    toast(conv.rows.length+' rows loaded','ok');
+  };
+  reader.readAsText(file);
+}
+function vDrop(e){e.preventDefault();const f=e.dataTransfer.files[0];if(f)loadConvCSV({target:{files:[f]}});}
+
+function applyPreset(val){
+  const p=PRESETS[val];
+  if(val==='custom'){
+    convOut=[...conv.headers];convMap={};
+    conv.headers.forEach(h=>convMap[h]=h);
+  } else if(p){
+    convOut=[...p.cols];convMap={};
+    convOut.forEach(col=>convMap[col]=p.auto[col]||'__default__');
+  }
+  renderMapRows();updatePreview();
+}
+
+function renderMapRows(){
+  const val=$('presetSel').value,p=PRESETS[val];
+  $('outColsPreview').innerHTML=convOut.map(c=>`<span class="chip on" style="cursor:default">${c}</span>`).join('');
+  $('mapRows').innerHTML=convOut.map(col=>{
+    const cur=convMap[col]||'';
+    const isDef=cur==='__default__';
+    const defV=p?.defaults?.[col]??'';
+    return `<div class="map-row">
+      <select id="ms_${col.replace(/[^a-z0-9]/gi,'_')}" onchange="convMap['${col}']=this.value;updatePreview()"
+        style="padding:7px 10px;border:0.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;width:100%">
+        <option value="">— empty —</option>
+        <option value="__default__" ${isDef?'selected':''}>[ default: "${defV}" ]</option>
+        ${conv.headers.map(h=>`<option value="${h}" ${!isDef&&cur===h?'selected':''}>${h}</option>`).join('')}
+      </select>
+      <div class="map-arrow">→</div>
+      <div style="font-size:13px;font-weight:500;color:var(--text)">${col}</div>
+      <button onclick="removeCol('${col}')"
+        style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:4px;line-height:1"
+        title="Remove">×</button>
+    </div>`;
+  }).join('');
+}
+
+function removeCol(col){convOut=convOut.filter(c=>c!==col);delete convMap[col];renderMapRows();updatePreview();}
+
+function addMapRow(){
+  const name=prompt('New output column name:');
+  if(!name?.trim())return;
+  const col=name.trim();
+  convOut.push(col);convMap[col]='';
+  renderMapRows();updatePreview();
+}
+
+function getRow(r){
+  const val=$('presetSel').value,p=PRESETS[val];
+  return convOut.map(col=>{
+    const src=convMap[col];
+    if(!src)return '';
+    if(src==='__default__')return p?.defaults?.[col]??'';
+    return r[src]||'';
+  });
+}
+
+function updatePreview(){
+  if(!conv.rows.length){$('convPreview').textContent='Upload a source CSV to begin...';return;}
+  const lines=[convOut.join(',')];
+  conv.rows.slice(0,5).forEach(r=>{
+    const vals=getRow(r).map(v=>v.includes(',')?`"${v}"`:v);
+    lines.push(vals.join(','));
+  });
+  $('convPreview').textContent=lines.join('\n');
+}
+
+function copyPreview(){navigator.clipboard.writeText($('convPreview').textContent);toast('Copied!','ok');}
+
+function dlConverted(){
+  if(!conv.rows.length){toast('No data','err');return;}
+  const lines=[convOut.join(',')];
+  conv.rows.forEach(r=>{
+    const vals=getRow(r).map(v=>v.includes(',')?`"${v}"`:v);
+    lines.push(vals.join(','));
+  });
+  dlBlob(lines.join('\n'),'converted.csv');
+  toast('Downloaded!','ok');
+}
+
+function importAsContacts(){
+  if(!conv.rows.length){toast('No data','err');return;}
+  const pIdx=convOut.findIndex(c=>/phone|mobile|number/i.test(c));
+  const nIdx=convOut.findIndex(c=>/^name/i.test(c));
+  const tIdx=convOut.findIndex(c=>/tag|package|profile/i.test(c));
+  if(pIdx<0){toast('No phone column in output mapping','err');return;}
+  const imported=conv.rows.map((r,i)=>{
+    const out=getRow(r);
+    return{id:contacts.length+i,name:nIdx>=0?out[nIdx]:'',phone:normPhone(out[pIdx]||''),
+      tags:tIdx>=0&&out[tIdx]?[out[tIdx]]:[],selected:true};
+  }).filter(c=>c.phone.length>6);
+  contacts=[...contacts,...imported];
+  renderC();updateStats();updateRFilter();updateRCount();
+  switchTab('contacts',document.querySelectorAll('.tab')[1]);
+  toast(imported.length+' contacts imported','ok');
+}
+
+/* INIT */
+renderC();renderLog();
+</script>
+</body>
+</html>
