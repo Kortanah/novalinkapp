@@ -1,1005 +1,369 @@
-/* ══════════════════════════════════════════════════════
-   NOVALINK SMS — app.js
-   ══════════════════════════════════════════════════════ */
+<!DOCTYPE html>
+<html lang="en">
 
-/* ════════════════════════════════
-   CONFIG — set your Google Apps Script URL here
-   ════════════════════════════════ */
-const CFG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbyoV8iCduvVOCrjP6hHbtA4XynREahpmOhCKBd69QR9bok04jztWTCHkzDSbb2BplUp/exec',
-    senderId: 'NovaLink',
-    delay: 450,    // ms between sends (avoid rate limiting)
-    retries: 2     // auto-retry failed sends
-};
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NovaLink SMS — Bulk Messaging Platform</title>
+    <meta name="description"
+        content="NovaLink SMS — send single and bulk SMS messages, manage contacts, convert CSV files and manage message templates." />
 
-/* ════════════════════════════════
-   BUILT-IN TEMPLATES
-   ════════════════════════════════ */
-const BUILTIN_TEMPLATES = [
-    {
-        id: 'tpl_wifi_voucher',
-        name: 'WiFi Voucher',
-        category: 'Voucher',
-        body:
-            `NovaLink WiFi Voucher
-Package : {{package}}
-Amount  : GH₵{{amount}}
-Code    : {{voucher}}
+    <!-- Google Fonts: Inter + Plus Jakarta Sans + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
 
-Thank you for choosing NovaLink!`
-    },
-    {
-        id: 'tpl_voucher_short',
-        name: 'Voucher (Short)',
-        category: 'Voucher',
-        body:
-            `NovaLink | {{package}} Package
-Voucher: {{voucher}}
-Amount: GH₵{{amount}}
-Connect to NovaLink WiFi → novalink.wlan/login`
-    },
-    {
-        id: 'tpl_renewal_reminder',
-        name: 'Renewal Reminder',
-        category: 'Reminder',
-        body:
-            `Hi {{name}}, your NovaLink {{package}} subscription is expiring soon.
-Renew now to stay connected!
-Call/WhatsApp us or visit novalink.wlan
-Thank you!`
-    },
-    {
-        id: 'tpl_welcome',
-        name: 'Welcome Message',
-        category: 'General',
-        body:
-            `Welcome to NovaLink, {{name}}!
-You're now connected to our network.
-For support, reply or visit novalink.wlan
-Enjoy browsing!`
-    },
-    {
-        id: 'tpl_promo',
-        name: 'Promo Offer',
-        category: 'Promo',
-        body:
-            `Hi {{name}}! Special offer from NovaLink!
-Get double data on your next voucher this weekend.
-Visit us or call to get yours now.
-NovaLink – Stay Connected.`
-    }
-];
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
 
-/* ════════════════════════════════
-   STATE
-   ════════════════════════════════ */
-let contacts = [], sendLog = [], activeTag = 'all';
-let conv = { headers: [], rows: [] }, convOut = [], convMap = {};
-let templates = [...BUILTIN_TEMPLATES];
-let editingTplId = null;
-let broadcastCancelled = false;
-let sentCount = 0, failCount = 0;
+<body>
 
-const $ = id => document.getElementById(id);
-
-/* ════════════════════════════════
-   VARIABLE DETECTION — Quick Message
-   ════════════════════════════════ */
-// All supported template variables (phone always comes from the phone field)
-const VAR_CONFIG = [
-    { key: 'name', label: 'Recipient Name', placeholder: 'e.g. Ama Owusu', icon: '👤' },
-    { key: 'voucher', label: 'Voucher Code', placeholder: 'e.g. ABCD1234', icon: '🎫' },
-    { key: 'package', label: 'Package Name', placeholder: 'e.g. Short 1hr', icon: '📦' },
-    { key: 'amount', label: 'Amount (GH₵)', placeholder: 'e.g. 12.00', icon: '💰' },
-];
-
-function detectAndRenderVars(msgId, wrapId) {
-    const text = $(msgId) ? $(msgId).value : '';
-    const wrap = $(wrapId);
-    if (!wrap) return;
-
-    // Find which variables are present in the message text
-    const found = VAR_CONFIG.filter(v =>
-        new RegExp(`\\{\\{${v.key}\\}\\}`, 'i').test(text)
-    );
-
-    // Preserve any values the user has already typed
-    const saved = {};
-    wrap.querySelectorAll('input[data-qvar]').forEach(el => {
-        saved[el.dataset.qvar] = el.value;
-    });
-
-    if (!found.length) {
-        // Animate out if currently showing
-        if (wrap.children.length) {
-            wrap.style.opacity = '0';
-            wrap.style.transform = 'translateY(-4px)';
-            setTimeout(() => {
-                wrap.innerHTML = '';
-                wrap.style.opacity = '';
-                wrap.style.transform = '';
-            }, 180);
-        }
-        return;
-    }
-
-    wrap.innerHTML = `
-      <div style="
-        background: var(--bg3);
-        border: 1px solid var(--border2);
-        border-radius: var(--radius-sm);
-        padding: 14px 16px;
-        margin-bottom: 13px;
-        animation: varsSlideIn .18s cubic-bezier(.4,0,.2,1);
-      ">
-        <div style="
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: .08em;
-          text-transform: uppercase;
-          color: var(--text3);
-          margin-bottom: 12px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        ">
-          <span style="color:var(--amber)">⚡</span> Fill in message variables
+    <!-- ── TOPBAR ── -->
+    <div class="topbar">
+        <div class="logo">
+            <div class="logo-icon">📡</div>
+            NovaLink
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
-          ${found.map(v => `
-            <div>
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.01em">
-                ${v.icon} ${v.label}
-                <span style="
-                  display:inline-block;
-                  background:var(--amber-dim);
-                  color:var(--amber);
-                  border:1px solid rgba(251,191,36,.25);
-                  border-radius:4px;
-                  font-size:9px;
-                  padding:1px 6px;
-                  font-family:var(--font-mono);
-                  margin-left:4px;
-                  vertical-align:middle;
-                ">{{${v.key}}}</span>
-              </label>
-              <input
-                type="text"
-                class="fi"
-                id="qv_${v.key}"
-                data-qvar="${v.key}"
-                placeholder="${v.placeholder}"
-                value="${esc(saved[v.key] || '')}"
-                style="font-size:13px"
-              />
-            </div>`).join('')}
+        <div class="topbar-right">
+            <div class="bal-display" id="balDisplay">
+                <span class="status-dot ok"></span>
+                <span id="balText">— SMS</span>
+            </div>
+            <button class="btn-bal" id="balBtn" onclick="checkBalance()">
+                <span class="bal-spinner" id="balSpinner">↻</span> Balance
+            </button>
         </div>
-      </div>`;
-
-    wrap.style.opacity = '1';
-    wrap.style.transform = 'translateY(0)';
-}
-
-/* ════════════════════════════════
-   TOAST
-   ════════════════════════════════ */
-const TOAST_ICONS = { ok: '✓', err: '✕', warn: '⚠', info: 'ℹ' };
-let toastTimer;
-
-function toast(msg, type = 'info') {
-    const el = $('toast');
-    // clear previous type classes
-    el.className = '';
-    void el.offsetWidth; // reflow to restart animation
-
-    const icon = el.querySelector('.toast-icon') || (() => {
-        const s = document.createElement('span');
-        s.className = 'toast-icon';
-        el.prepend(s);
-        return s;
-    })();
-    const textNode = el.querySelector('.toast-text') || (() => {
-        const s = document.createElement('span');
-        s.className = 'toast-text';
-        el.appendChild(s);
-        return s;
-    })();
-
-    icon.textContent = TOAST_ICONS[type] || 'ℹ';
-    textNode.textContent = msg;
-
-    el.classList.add('show', `t-${type}`);
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
-}
-
-/* ════════════════════════════════
-   NAVIGATION
-   ════════════════════════════════ */
-function switchTab(id, el) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    $(id).classList.add('active');
-    el.classList.add('active');
-}
-
-/* ════════════════════════════════
-   UTILS
-   ════════════════════════════════ */
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-function normPhone(p) {
-    p = String(p).replace(/\s+/g, '').replace(/[^\d+]/g, '');
-    if (p.startsWith('0')) p = '+233' + p.slice(1);
-    if (!p.startsWith('+')) p = '+233' + p;
-    return p;
-}
-
-function parseCSV(txt) {
-    const lines = txt.trim().split(/\r?\n/);
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const rows = lines.slice(1).map(line => {
-        const vals = []; let cur = '', inQ = false;
-        for (const ch of line) {
-            if (ch === '"') { inQ = !inQ; }
-            else if (ch === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
-            else cur += ch;
-        }
-        vals.push(cur.trim());
-        const obj = {};
-        headers.forEach((h, i) => obj[h] = (vals[i] || '').replace(/^"|"$/g, '').trim());
-        return obj;
-    }).filter(r => Object.values(r).some(v => v));
-    return { headers, rows };
-}
-
-function dlBlob(content, name) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
-    a.download = name;
-    a.click();
-}
-
-function resolveVars(body, data = {}) {
-    return body
-        .replace(/\{\{name\}\}/gi, data.name || 'Customer')
-        .replace(/\{\{voucher\}\}/gi, data.voucher || data.voucher_code || 'XXXXXXXX')
-        .replace(/\{\{package\}\}/gi, data.package || data.package_name || 'Standard')
-        .replace(/\{\{amount\}\}/gi, data.amount || '0.00')
-        .replace(/\{\{phone\}\}/gi, data.phone || '+233XXXXXXXXX');
-}
-
-function esc(s) {
-    return String(s || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-function updateStats() {
-    $('statTotal').textContent = contacts.length;
-    $('statSent').textContent = sentCount;
-    $('statFail').textContent = failCount;
-}
-
-/* ════════════════════════════════
-   SMS API CALL (via Google Apps Script)
-   ════════════════════════════════ */
-const STATUS_CODES = {
-    '1000': { ok: true, label: 'Submitted', hint: 'Accepted by gateway' },
-    '1002': { ok: false, label: 'Failed', hint: 'Gateway rejected' },
-    '1003': { ok: false, label: 'Low balance', hint: 'Top up your account' },
-    '1004': { ok: false, label: 'Invalid key', hint: 'Check your API key' },
-    '1005': { ok: false, label: 'Bad phone', hint: 'Invalid phone number' },
-    '1006': { ok: false, label: 'Bad sender', hint: 'Check sender ID' },
-    '1007': { ok: true, label: 'Queued', hint: 'Message is scheduled' },
-    '1008': { ok: false, label: 'Empty msg', hint: 'Message body was empty' }
-};
-
-/**
- * callSMS — sends a message via Google Apps Script proxy.
- * The API returns JSON: { success, code, data, message }
- * We extract `code` and return it as a string for STATUS_CODES lookup.
- */
-async function callSMS(to, msg, attempt = 1) {
-    if (!CFG.scriptUrl || CFG.scriptUrl.includes('...')) {
-        toast('Set your Google Apps Script URL in CFG.scriptUrl', 'err');
-        throw new Error('No script URL configured');
-    }
-    const url = `${CFG.scriptUrl}?to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}&sender_id=${encodeURIComponent(CFG.senderId)}`;
-    try {
-        const r = await fetch(url);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const raw = (await r.text()).trim();
-
-        // API returns JSON — parse it and extract the numeric code
-        try {
-            const json = JSON.parse(raw);
-            // Prefer json.code; fall back to success flag  
-            if (json.code !== undefined) return String(json.code);
-            if (json.success === true) return '1000';
-            if (json.success === false) return '1002';
-        } catch (_) {
-            // Not JSON — treat as a bare code string (legacy fallback)
-        }
-        return raw;
-    } catch (e) {
-        if (attempt <= CFG.retries) {
-            await sleep(600 * attempt);
-            return callSMS(to, msg, attempt + 1);
-        }
-        throw e;
-    }
-}
-
-/* ════════════════════════════════
-   BALANCE CHECK
-   ════════════════════════════════ */
-async function checkBalance(silent = false) {
-    const btn = $('balBtn');
-    btn.classList.add('loading');
-    try {
-        const url = `${CFG.scriptUrl}?action=balance`;
-        const r = await fetch(url);
-        const raw = (await r.text()).trim();
-
-        // Parse JSON response if possible
-        let display = raw;
-        try {
-            const json = JSON.parse(raw);
-            // Common balance field names from various APIs
-            display = json.balance ?? json.credit ?? json.credits ??
-                json.sms_balance ?? json.data?.balance ??
-                json.data?.credit ?? raw;
-        } catch (_) { /* plain text response — use as-is */ }
-
-        $('balText').textContent = display + ' SMS';
-        $('balDisplay').classList.add('show');
-        if (!silent) toast('Balance: ' + display + ' SMS credits', 'ok');
-    } catch (e) {
-        if (!silent) toast('Could not reach API — check Script URL', 'err');
-    } finally {
-        btn.classList.remove('loading');
-    }
-}
-
-/* ════════════════════════════════
-   CHAR COUNTERS
-   ════════════════════════════════ */
-function updateCharCount(lenId, pgId, containerId, length) {
-    $(lenId).textContent = length;
-    $(pgId).textContent = Math.max(1, Math.ceil(length / 160));
-    const el = $(containerId);
-    el.classList.toggle('warn', length > 140 && length <= 160);
-    el.classList.toggle('over', length > 160);
-}
-function countQ() {
-    updateCharCount('qcc', 'qpg', 'qCharCount', $('quickMsg').value.length);
-    detectAndRenderVars('quickMsg', 'qVarsWrap');
-}
-function countB() { updateCharCount('bcc', 'bpg', 'bCharCount', $('msgBody').value.length); }
-function countTpl() { $('tplCC').textContent = $('tplBody').value.length; }
-
-/* ════════════════════════════════
-   QUICK MESSAGE
-   ════════════════════════════════ */
-function setQStatus(state, txt) {
-    const dot = $('qStatus'), label = $('qStatusTxt');
-    dot.className = 'status-dot' + (state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
-    label.textContent = txt;
-}
-
-async function sendQuick() {
-    const rawPhone = $('quickPhone').value.trim();
-    const msg = $('quickMsg').value.trim();
-    if (!rawPhone) { toast('Enter a phone number', 'err'); return; }
-    if (!msg) { toast('Enter a message', 'err'); return; }
-
-    const phone = normPhone(rawPhone);
-
-    // Gather values from dynamically-rendered variable inputs
-    const varData = { phone };
-    const wrap = $('qVarsWrap');
-    if (wrap) {
-        wrap.querySelectorAll('input[data-qvar]').forEach(el => {
-            varData[el.dataset.qvar] = el.value.trim();
-        });
-    }
-
-    const resolved = resolveVars(msg, varData);
-
-    const btn = $('qBtn');
-    btn.disabled = true;
-    btn.textContent = 'Sending…';
-    setQStatus('', 'Sending…');
-
-    try {
-        const code = await callSMS(phone, resolved);
-        const status = STATUS_CODES[code] || { ok: false, label: 'Code: ' + code, hint: '' };
-        addLog(varData.name || phone, phone, resolved, status.ok, status.label, status.hint || '');
-        if (status.ok) {
-            sentCount++;
-            setQStatus('ok', status.label + ' ✓');
-            toast('Message submitted to ' + phone, 'ok');
-            // Refresh balance silently after successful send
-            checkBalance(true);
-        } else {
-            failCount++;
-            setQStatus('err', status.label);
-            toast('Send failed: ' + status.label, 'err');
-        }
-    } catch (e) {
-        failCount++;
-        setQStatus('err', 'Error');
-        toast('Error: ' + e.message, 'err');
-        addLog(varData.name || phone, phone, resolved || msg, false, 'Error', e.message);
-    }
-    updateStats();
-    btn.disabled = false;
-    btn.textContent = 'Send ↗';
-}
-
-/* ════════════════════════════════
-   BROADCAST
-   ════════════════════════════════ */
-function getRecipients() {
-    const filter = $('recipientFilter').value;
-    if (filter === 'all') return contacts;
-    const sel = contacts.filter(c => c._selected);
-    return sel.length ? sel : contacts.filter(c => {
-        const tags = (c.tags || '').split(',').map(t => t.trim().toLowerCase());
-        return tags.includes(filter.toLowerCase());
-    });
-}
-
-function updateRCount() {
-    const n = getRecipients().length;
-    $('rCount').textContent = n + ' recipient' + (n !== 1 ? 's' : '');
-}
-
-function previewB() {
-    const msg = $('msgBody').value.trim();
-    if (!msg) { toast('Write a message first', 'err'); return; }
-    const sample = contacts[0] || { name: 'Ama Owusu', phone: '+233241234567', voucher_code: 'DEMO1234', package_name: 'Short', amount: '12.00' };
-    const preview = resolveVars(msg, { ...sample, phone: normPhone(sample.phone || '+233000000000') });
-    alert('Preview for first contact:\n\n' + preview);
-}
-
-function cancelBroadcast() {
-    broadcastCancelled = true;
-    toast('Stopping broadcast…', 'warn');
-}
-
-async function sendBroadcast() {
-    const msg = $('msgBody').value.trim();
-    if (!msg) { toast('Write a broadcast message', 'err'); return; }
-    const recipients = getRecipients();
-    if (!recipients.length) { toast('No recipients selected', 'err'); return; }
-
-    const confirmed = confirm(`Send to ${recipients.length} contact(s)?`);
-    if (!confirmed) return;
-
-    broadcastCancelled = false;
-    const sendBtn = $('sendBtn');
-    const cancelBtn = $('cancelBtn');
-    sendBtn.disabled = true;
-    cancelBtn.style.display = 'inline-flex';
-    $('progWrap').style.display = 'block';
-
-    let sent = 0, failed = 0;
-
-    for (let i = 0; i < recipients.length; i++) {
-        if (broadcastCancelled) break;
-        const c = recipients[i];
-        const phone = normPhone(c.phone || c.Phone || '');
-        if (!phone || phone.length < 10) {
-            addLog(c.name || '—', phone, '—', false, 'Bad phone');
-            failed++; failCount++;
-            continue;
-        }
-        const resolved = resolveVars(msg, { ...c, phone });
-        const pct = Math.round((i / recipients.length) * 100);
-        $('progBar').style.width = pct + '%';
-        $('progPct').textContent = pct + '%';
-        $('progLabel').textContent = `Sending ${i + 1} / ${recipients.length}…`;
-
-        try {
-            const code = await callSMS(phone, resolved);
-            const status = STATUS_CODES[code] || { ok: false, label: 'Code: ' + code, hint: '' };
-            addLog(c.name || phone, phone, resolved, status.ok, status.label, status.hint || '');
-            if (status.ok) { sent++; sentCount++; } else { failed++; failCount++; }
-        } catch (e) {
-            console.error('Broadcast send error for', phone, e);
-            addLog(c.name || phone, phone, resolved, false, 'Error', e.message || 'Network error');
-            failed++; failCount++;
-        }
-        updateStats();
-        if (i < recipients.length - 1) await sleep(CFG.delay);
-    }
-
-    $('progBar').style.width = '100%';
-    $('progPct').textContent = '100%';
-    $('progLabel').textContent = broadcastCancelled
-        ? `Stopped · ${sent} sent, ${failed} failed`
-        : `Done · ${sent} sent, ${failed} failed`;
-
-    toast(
-        broadcastCancelled
-            ? `Stopped — ${sent} sent, ${failed} failed`
-            : `Broadcast complete — ${sent} sent, ${failed} failed`,
-        failed === 0 ? 'ok' : 'warn'
-    );
-
-    sendBtn.disabled = false;
-    cancelBtn.style.display = 'none';
-
-    // Refresh balance after broadcast
-    checkBalance(true);
-}
-
-/* ════════════════════════════════
-   SEND LOG
-   ════════════════════════════════ */
-function addLog(name, phone, msg, ok, label, hint = '') {
-    sendLog.push({ name, phone, msg, ok, label, hint, time: new Date() });
-    renderLog();
-}
-
-function renderLog() {
-    const el = $('sendLog');
-    if (!sendLog.length) {
-        el.innerHTML = `
-          <div class="log-empty">
-            <div style="font-size:22px;margin-bottom:8px">📭</div>
-            No messages sent yet
-          </div>`;
-        return;
-    }
-    el.innerHTML = sendLog.slice().reverse().map((e, i) => {
-        const num = sendLog.length - i;
-        const time = e.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        // truncate message to ~80 chars for preview
-        const msgPreview = e.msg.length > 80
-            ? esc(e.msg.slice(0, 80)) + '<span style="color:var(--text3)">…</span>'
-            : esc(e.msg);
-        const badgeClass = e.ok ? 'b-ok' : 'b-err';
-        const hint = e.hint ? `title="${esc(e.hint)}"` : '';
-        return `
-<div class="log-entry">
-  <div class="log-num">${num}</div>
-  <div class="log-body">
-    <div class="log-header">
-      <span class="log-name">${esc(e.name || '—')}</span>
-      <span class="log-phone">${esc(e.phone)}</span>
     </div>
-    <div class="log-preview" title="${esc(e.msg)}">${msgPreview}</div>
-  </div>
-  <div class="log-meta">
-    <span class="badge ${badgeClass}" ${hint}>${e.label}</span>
-    <span class="log-time">${time}</span>
-  </div>
-</div>`;
-    }).join('');
-}
 
-function clearLog() {
-    if (!sendLog.length) return;
-    if (confirm('Clear send log?')) { sendLog = []; renderLog(); toast('Log cleared', 'info'); }
-}
+    <div class="container">
 
-function exportLog() {
-    if (!sendLog.length) { toast('Nothing to export', 'warn'); return; }
-    const rows = [['#', 'Name', 'Phone', 'Message', 'Status', 'Time']];
-    sendLog.forEach((e, i) => rows.push([
-        i + 1, e.name, e.phone,
-        '"' + e.msg.replace(/"/g, '""') + '"',
-        e.label,
-        e.time.toLocaleString()
-    ]));
-    dlBlob(rows.map(r => r.join(',')).join('\n'), 'novalink_log_' + Date.now() + '.csv');
-}
+        <!-- ── TABS ── -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('messaging',this)">✉ Messaging</button>
+            <button class="tab" onclick="switchTab('contacts',this)">👥 Contacts</button>
+            <button class="tab" onclick="switchTab('converter',this)">⇄ Converter</button>
+            <button class="tab" onclick="switchTab('templates',this)">📋 Templates</button>
+        </div>
 
-/* ════════════════════════════════
-   CONTACTS
-   ════════════════════════════════ */
-function cDrop(e) {
-    e.preventDefault();
-    $('cDropZone').classList.remove('drag');
-    const file = e.dataTransfer.files[0];
-    if (file) loadContactsFile(file);
-}
+        <!-- ══════════════ MESSAGING ══════════════ -->
+        <div id="messaging" class="panel active">
 
-function loadContacts(event) { loadContactsFile(event.target.files[0]); }
+            <div class="stats-row">
+                <div class="stat">
+                    <div class="stat-val" id="statTotal">0</div>
+                    <div class="stat-lbl">Contacts loaded</div>
+                </div>
+                <div class="stat s-sent">
+                    <div class="stat-val" id="statSent">0</div>
+                    <div class="stat-lbl">Sent this session</div>
+                </div>
+                <div class="stat s-fail">
+                    <div class="stat-val" id="statFail">0</div>
+                    <div class="stat-lbl">Failed</div>
+                </div>
+            </div>
 
-function loadContactsFile(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        const { headers, rows } = parseCSV(e.target.result);
-        const phoneKey = headers.find(h => /phone/i.test(h)) || headers[0];
-        contacts = rows.map(r => ({
-            ...r,
-            phone: r[phoneKey] || r.phone || r.Phone || '',
-            name: r.name || r.Name || '',
-            tags: r.tags || r.Tags || ''
-        })).filter(r => r.phone);
-        updateStats();
-        renderContacts();
-        buildTagFilters();
-        buildRecipientFilter();
-        toast(`Loaded ${contacts.length} contacts`, 'ok');
-    };
-    reader.readAsText(file);
-}
+            <!-- QUICK MESSAGE -->
+            <div class="card">
+                <div class="card-title">Quick message — single recipient</div>
 
-let cFilter = '', cTagFilter = 'all';
+                <!-- Phone always visible -->
+                <div class="field">
+                    <label>Phone number</label>
+                    <input type="tel" id="quickPhone" class="fi" placeholder="024… or +233…" />
+                </div>
 
-function filterC(v) { cFilter = v.toLowerCase(); renderContacts(); }
+                <!-- Message + template picker -->
+                <div class="field">
+                    <label>Message</label>
+                    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                        <select id="quickTplSel" class="fi" style="flex:1;min-width:160px">
+                            <option value="">— choose template —</option>
+                        </select>
+                        <button class="btn btn-outline btn-sm" onclick="applyTplToQuick()">Apply</button>
+                    </div>
+                    <textarea id="quickMsg" class="fi"
+                        placeholder="Type your message or apply a template… Variables like {{name}}, {{voucher}}, {{package}}, {{amount}} will auto-generate fields below."
+                        oninput="countQ()"></textarea>
+                    <div class="char-count" id="qCharCount"><span id="qcc">0</span>/160 · <span id="qpg">1</span>
+                        page(s)</div>
+                </div>
 
-function buildTagFilters() {
-    const tags = new Set(['all']);
-    contacts.forEach(c => (c.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tags.add(t)));
-    const el = $('tagFilters');
-    el.innerHTML = [...tags].map(t => `
-  <span class="chip ${t === cTagFilter ? 'on' : 'off'}" onclick="setTagFilter('${t}')">${t === 'all' ? 'All' : t}</span>
-`).join('');
-}
+                <!-- Dynamic variable fields — auto-generated when {{vars}} detected -->
+                <div id="qVarsWrap"></div>
 
-function setTagFilter(t) { cTagFilter = t; buildTagFilters(); renderContacts(); }
+                <div class="frow">
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span class="status-dot" id="qStatus"></span>
+                        <span style="font-size:12px;color:var(--text3)" id="qStatusTxt">Ready</span>
+                    </div>
+                    <button class="btn btn-primary" id="qBtn" onclick="sendQuick()">Send ↗</button>
+                </div>
+            </div>
 
-function getFilteredContacts() {
-    return contacts.filter(c => {
-        const matchTag = cTagFilter === 'all' || (c.tags || '').split(',').map(x => x.trim()).includes(cTagFilter);
-        const matchSearch = !cFilter ||
-            (c.name || '').toLowerCase().includes(cFilter) ||
-            (c.phone || '').includes(cFilter);
-        return matchTag && matchSearch;
-    });
-}
+            <div class="divider"></div>
 
-function renderContacts() {
-    const filtered = getFilteredContacts();
-    $('cCount').textContent = contacts.length;
-    const tbody = $('cBody');
-    if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:28px 0">No contacts found</td></tr>';
-        return;
-    }
-    tbody.innerHTML = filtered.map((c, i) => `
-  <tr>
-    <td><input type="checkbox" ${c._selected ? 'checked' : ''} onchange="toggleSel(${contacts.indexOf(c)})" /></td>
-    <td style="color:var(--text3);font-size:12px">${i + 1}</td>
-    <td>${esc(c.name || '—')}</td>
-    <td style="font-family:var(--font-mono);font-size:12px">${esc(normPhone(c.phone))}</td>
-    <td>${(c.tags || '').split(',').filter(Boolean).map(t => `<span class="tag-chip">${esc(t.trim())}</span>`).join('')}</td>
-    <td style="font-family:var(--font-mono);font-size:12px;color:var(--text2)">${esc(c.voucher_code || '—')}</td>
-  </tr>`).join('');
-    updateSelCount();
-}
+            <!-- BROADCAST -->
+            <div class="card">
+                <div class="card-title">Broadcast — send to multiple contacts</div>
+                <div class="grid2">
+                    <div class="field">
+                        <label>Campaign name</label>
+                        <input type="text" id="campaignName" class="fi" placeholder="e.g. April promo" />
+                    </div>
+                    <div class="field">
+                        <label>Recipients</label>
+                        <select id="recipientFilter" class="fi" onchange="updateRCount()">
+                            <option value="all">All contacts</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Message</label>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                            <select id="broadTplSel" class="fi" style="flex:1;min-width:160px">
+                                <option value="">— choose template —</option>
+                            </select>
+                            <button class="btn btn-outline btn-sm" onclick="applyTplToBroad()">Apply</button>
+                        </div>
+                        <textarea id="msgBody" class="fi" placeholder="Type your broadcast message or apply a template…"
+                            oninput="countB()"></textarea>
+                        <div class="char-count" id="bCharCount"><span id="bcc">0</span>/160 · <span id="bpg">1</span>
+                            page(s)</div>
+                    </div>
 
-function toggleSel(idx) { contacts[idx]._selected = !contacts[idx]._selected; updateSelCount(); }
+                    <div id="progWrap" style="display:none;margin-top:12px">
+                        <div
+                            style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px">
+                            <span id="progLabel">Preparing…</span>
+                            <span id="progPct">0%</span>
+                        </div>
+                        <div class="prog-bg">
+                            <div class="prog-bar" id="progBar" style="width:0%"></div>
+                        </div>
+                    </div>
 
-function toggleAll() {
-    const checked = $('selAll').checked;
-    getFilteredContacts().forEach(c => c._selected = checked);
-    renderContacts();
-}
+                    <div class="frow">
+                        <span style="font-size:12px;color:var(--text3)" id="rCount">0 recipients</span>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn btn-outline btn-sm" onclick="previewB()">Preview</button>
+                            <button class="btn btn-danger btn-sm" id="cancelBtn" onclick="cancelBroadcast()"
+                                style="display:none">⏹ Stop</button>
+                            <button class="btn btn-primary" id="sendBtn" onclick="sendBroadcast()">Send
+                                broadcast</button>
+                        </div>
+                    </div>
+                </div>
 
-function updateSelCount() {
-    const n = contacts.filter(c => c._selected).length;
-    $('selCount').textContent = n + ' selected';
-}
+                <!-- SEND LOG -->
+                <div class="card">
+                    <div class="section-header">
+                        <div class="card-title" style="margin:0">Send log</div>
+                        <div class="log-export">
+                            <button class="btn btn-outline btn-sm" onclick="exportLog()">⬇ Export CSV</button>
+                            <button class="btn btn-outline btn-sm" onclick="clearLog()">Clear</button>
+                        </div>
+                    </div>
+                    <div id="sendLog" style="max-height:300px;overflow-y:auto">
+                        <div class="log-empty">No messages sent yet</div>
+                    </div>
+                </div>
 
-function clearContacts() {
-    if (!contacts.length) return;
-    if (confirm('Remove all contacts?')) {
-        contacts = [];
-        renderContacts();
-        buildTagFilters();
-        buildRecipientFilter();
-        updateStats();
-        toast('Contacts cleared', 'info');
-    }
-}
+            </div>
 
-function goMsg() {
-    const sel = contacts.filter(c => c._selected);
-    if (!sel.length) { toast('Select contacts first', 'warn'); return; }
-    $('recipientFilter').value = 'selected';
-    updateRCount();
-    switchTab('messaging', document.querySelectorAll('.tab')[0]);
-    toast(sel.length + ' contacts ready to message', 'info');
-}
+            <!-- ══════════════ CONTACTS ══════════════ -->
+            <div id="contacts" class="panel">
+                <div class="card">
+                    <div class="card-title">Upload contacts CSV</div>
+                    <div class="upload-zone" id="cDropZone" onclick="document.getElementById('cFile').click()"
+                        ondragover="event.preventDefault();this.classList.add('drag')"
+                        ondragleave="this.classList.remove('drag')" ondrop="cDrop(event)">
+                        <div class="uico">📂</div>
+                        <div class="utitle">Drop CSV or click to browse</div>
+                        <div class="usub">Accepts: name, phone, tags · Phone-only CSVs also work</div>
+                    </div>
+                    <input type="file" id="cFile" accept=".csv" onchange="loadContacts(event)" />
+                    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+                        <button class="btn btn-outline btn-sm" onclick="dlTemplate()">⬇ Download template</button>
+                        <span style="font-size:12px;color:var(--text3)">
+                            name, phone, tags, voucher_code, package_name, amount
+                        </span>
+                    </div>
+                </div>
 
-function buildRecipientFilter() {
-    const tags = new Set();
-    contacts.forEach(c => (c.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tags.add(t)));
-    const sel = $('recipientFilter');
-    sel.innerHTML = '<option value="all">All contacts</option>' +
-        '<option value="selected">Selected contacts</option>' +
-        [...tags].map(t => `<option value="${t}">${t}</option>`).join('');
-    updateRCount();
-}
+                <div class="card">
+                    <div class="section-header" style="flex-wrap:wrap;gap:8px">
+                        <div class="card-title" style="margin:0">Contacts (<span id="cCount">0</span>)</div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                            <input class="search-bar" type="text" placeholder="Search name or phone…"
+                                oninput="filterC(this.value)" />
+                            <button class="btn btn-danger btn-sm" onclick="clearContacts()">Clear all</button>
+                        </div>
+                    </div>
+                    <div class="chip-row" id="tagFilters"></div>
+                    <div style="overflow-x:auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selAll" onchange="toggleAll()" /></th>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Tags</th>
+                                    <th>Voucher</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cBody">
+                                <tr>
+                                    <td colspan="6" style="text-align:center;color:var(--text3);padding:28px 0">No
+                                        contacts loaded</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="frow">
+                        <span style="font-size:12px;color:var(--text3)" id="selCount">0 selected</span>
+                        <button class="btn btn-primary btn-sm" onclick="goMsg()">Message selected ↗</button>
+                    </div>
+                </div>
+            </div>
 
-function dlTemplate() {
-    dlBlob('name,phone,tags,voucher_code,package_name,amount\nAma Owusu,0241234567,customer,ABCD1234,Short,12.00\n', 'novalink_template.csv');
-}
+            <!-- ══════════════ CSV CONVERTER ══════════════ -->
+            <div id="converter" class="panel">
+                <div class="card">
+                    <div class="card-title">CSV structure converter</div>
+                    <div class="conv-cols">
+                        <div>
+                            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Source CSV
+                            </div>
+                            <div class="upload-zone" onclick="document.getElementById('vFile').click()"
+                                ondragover="event.preventDefault();this.classList.add('drag')"
+                                ondragleave="this.classList.remove('drag')" ondrop="vDrop(event)" style="padding:18px">
+                                <div class="uico" style="font-size:22px">📄</div>
+                                <div class="usub">Click or drop CSV</div>
+                            </div>
+                            <input type="file" id="vFile" accept=".csv" onchange="loadConvCSV(event)" />
+                            <div style="font-size:12px;color:var(--text3);margin:10px 0 4px">Detected columns:</div>
+                            <div class="chip-row" id="srcCols"><span
+                                    style="color:var(--text3);font-size:12px">None</span></div>
+                            <div style="font-size:12px;color:var(--text3)" id="srcRowCount"></div>
+                        </div>
+                        <div class="arrow-mid">→</div>
+                        <div>
+                            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Output
+                                preset</div>
+                            <select id="presetSel" class="fi" onchange="applyPreset(this.value)"
+                                style="margin-bottom:8px">
+                                <option value="hotspot">Hotspot export → Voucher sheet</option>
+                                <option value="contacts">Contact importer (name, phone, tags)</option>
+                                <option value="custom">Custom mapping</option>
+                            </select>
+                            <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Output columns:</div>
+                            <div class="chip-row" id="outColsPreview"></div>
+                        </div>
+                    </div>
 
-/* ════════════════════════════════
-   CSV CONVERTER
-   ════════════════════════════════ */
-const PRESETS = {
-    hotspot: {
-        label: 'Hotspot → Voucher Sheet',
-        cols: ['voucher_code', 'status', 'package_name', 'amount', 'phone', 'reference', 'date_used', 'sms_status']
-    },
-    contacts: {
-        label: 'Contact Importer',
-        cols: ['name', 'phone', 'tags']
-    },
-    custom: {
-        label: 'Custom',
-        cols: []
-    }
-};
+                    <div class="divider"></div>
+                    <div class="card-title">Column mapping</div>
 
-function vDrop(e) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('drag');
-    loadConvCSVFile(e.dataTransfer.files[0]);
-}
+                    <!-- Header row for the mapping grid -->
+                    <div class="map-row-header">
+                        <span>Output column name</span>
+                        <span class="map-arrow"></span>
+                        <span>Source CSV column</span>
+                        <span>Fixed / default value</span>
+                        <span></span>
+                    </div>
 
-function loadConvCSV(ev) { loadConvCSVFile(ev.target.files[0]); }
+                    <div id="mapRows"></div>
+                    <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="addMapRow()">+ Add output
+                        column</button>
 
-function loadConvCSVFile(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        conv = parseCSV(e.target.result);
-        $('srcCols').innerHTML = conv.headers.map(h => `<span class="chip off">${h}</span>`).join('');
-        $('srcRowCount').textContent = conv.rows.length + ' rows detected';
-        applyPreset($('presetSel').value);
-        toast('CSV loaded: ' + conv.rows.length + ' rows', 'ok');
-    };
-    reader.readAsText(file);
-}
+                    <div style="margin-top:18px">
+                        <div class="card-title">Output preview (first 5 rows)</div>
+                        <div class="preview-box" id="convPreview">Upload a source CSV to begin…</div>
+                    </div>
+                    <div class="frow">
+                        <span style="font-size:12px;color:var(--text3)" id="convRowCount">0 rows</span>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn btn-outline btn-sm" onclick="copyPreview()">Copy preview</button>
+                            <button class="btn btn-success btn-sm" onclick="importAsContacts()">Import as
+                                contacts</button>
+                            <button class="btn btn-primary btn-sm" onclick="dlConverted()">⬇ Download CSV</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-function applyPreset(preset) {
-    const p = PRESETS[preset] || PRESETS.custom;
-    const el = $('outColsPreview');
-    el.innerHTML = p.cols.map(c => `<span class="chip on">${c}</span>`).join('') ||
-        '<span style="color:var(--text3);font-size:12px">Define below</span>';
-    convMap = {};
-    const mr = $('mapRows');
-    mr.innerHTML = '';
-    if (preset !== 'custom') {
-        p.cols.forEach(col => {
-            const src = conv.headers.find(h => h.toLowerCase().replace(/[\s_]/g, '') === col.toLowerCase().replace(/[\s_]/g, '')) || '';
-            convMap[col] = src;
-            addMapRow(col, src, '');
-        });
-    }
-    updateConvPreview();
-}
+            <!-- ══════════════ TEMPLATES ══════════════ -->
+            <div id="templates" class="panel">
+                <div class="card">
+                    <div class="section-header">
+                        <div class="card-title" style="margin:0">Message templates</div>
+                        <span style="font-size:12px;color:var(--text3)">Click to preview · Variables auto-fill on
+                            send</span>
+                    </div>
+                    <div
+                        style="margin-bottom:14px;padding:12px 14px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.9">
+                        Variables: &nbsp;
+                        <span class="var-tag">{{name}}</span> &nbsp;
+                        <span class="var-tag">{{voucher}}</span> &nbsp;
+                        <span class="var-tag">{{package}}</span> &nbsp;
+                        <span class="var-tag">{{amount}}</span> &nbsp;
+                        <span class="var-tag">{{phone}}</span>
+                        <br /><span style="color:var(--text3)">When sending to contacts: voucher_code → {{voucher}},
+                            package_name → {{package}}</span>
+                    </div>
+                    <div id="tplList"></div>
+                </div>
 
-/**
- * addMapRow — adds a mapping row to the converter
- * @param {string} outName   — output column name
- * @param {string} srcName   — source CSV column (empty = none / use fixed value)
- * @param {string} fixedVal  — fixed/static value (used when srcName is empty)
- */
-function addMapRow(outName = '', srcName = '', fixedVal = '') {
-    const id = 'mr_' + Date.now() + Math.random().toString(36).slice(2);
-    const div = document.createElement('div');
-    div.className = 'map-row';
-    div.id = id;
+                <div class="card">
+                    <div class="card-title">Create / edit template</div>
+                    <div class="grid2">
+                        <div class="field">
+                            <label>Template name</label>
+                            <input type="text" id="tplName" class="fi" placeholder="e.g. WiFi Voucher" />
+                        </div>
+                        <div class="field">
+                            <label>Category</label>
+                            <select id="tplCat" class="fi">
+                                <option>Voucher</option>
+                                <option>Promo</option>
+                                <option>Reminder</option>
+                                <option>General</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Message body</label>
+                        <textarea id="tplBody" class="fi" style="min-height:170px" placeholder="Type your template…"
+                            oninput="countTpl()"></textarea>
+                        <div class="char-count"><span id="tplCC">0</span> chars</div>
+                    </div>
+                    <div class="frow">
+                        <button class="btn btn-danger btn-sm" onclick="resetTplForm()">Clear form</button>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn btn-outline btn-sm" onclick="previewTpl()">Preview sample</button>
+                            <button class="btn btn-primary btn-sm" onclick="saveTpl()">Save template</button>
+                        </div>
+                    </div>
+                    <div id="tplPreviewOut" style="display:none;margin-top:16px">
+                        <div class="card-title">Preview</div>
+                        <div class="preview-box" id="tplPreviewBox"></div>
+                    </div>
+                </div>
+            </div>
 
-    const srcOpts = ['', ...conv.headers].map(h =>
-        `<option value="${h}" ${h === srcName ? 'selected' : ''}>${h || '— skip —'}</option>`).join('');
+        </div><!-- /container -->
 
-    div.innerHTML = `
-      <input  class="fi" placeholder="Output column" value="${esc(outName)}"
-              oninput="updateConvPreview()" style="font-size:12px;padding:7px 10px"/>
-      <div class="map-arrow">←</div>
-      <select class="fi" onchange="updateConvPreview()" style="font-size:12px;padding:7px 10px">${srcOpts}</select>
-      <input  class="fi" placeholder="Fixed value (optional)" value="${esc(fixedVal)}"
-              oninput="updateConvPreview()" style="font-size:12px;padding:7px 10px"
-              title="If a source column is selected, it takes priority. Fixed value is used only when source column is empty or '— skip —'."/>
-      <button class="btn btn-danger btn-sm" style="padding:6px 9px"
-              onclick="document.getElementById('${id}').remove();updateConvPreview()">✕</button>`;
+        <!-- Toast notification -->
+        <div id="toast">
+            <span class="toast-icon"></span>
+            <span class="toast-text"></span>
+        </div>
 
-    $('mapRows').appendChild(div);
-    updateConvPreview();
-}
+        <script src="js/app.js"></script>
+</body>
 
-function getConvMapping() {
-    const rows = $('mapRows').querySelectorAll('.map-row');
-    const map = {};
-    rows.forEach(row => {
-        const inputs = row.querySelectorAll('input,select');
-        const outCol = inputs[0].value.trim();
-        const srcCol = inputs[1].value;          // select
-        const fixVal = inputs[2].value.trim();   // fixed value input
-        if (outCol) map[outCol] = { src: srcCol, fix: fixVal };
-    });
-    return map;
-}
-
-function updateConvPreview() {
-    const map = getConvMapping();
-    const outHeaders = Object.keys(map);
-    if (!outHeaders.length || !conv.rows.length) {
-        $('convPreview').textContent = 'Configure mapping above…';
-        $('convRowCount').textContent = '0 rows';
-        return;
-    }
-    convOut = conv.rows.map(row => {
-        const out = {};
-        outHeaders.forEach(h => {
-            const { src, fix } = map[h];
-            // source column takes priority; fall back to fixed value
-            out[h] = (src && row[src] !== undefined) ? (row[src] || fix || '') : (fix || '');
-        });
-        return out;
-    });
-    const preview = [outHeaders.join(','),
-    ...convOut.slice(0, 5).map(r => outHeaders.map(h => `"${(r[h] || '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-    $('convPreview').textContent = preview;
-    $('convRowCount').textContent = convOut.length + ' rows';
-}
-
-function copyPreview() {
-    navigator.clipboard.writeText($('convPreview').textContent).then(() => toast('Copied!', 'ok'));
-}
-
-function importAsContacts() {
-    if (!convOut.length) { toast('No converted data', 'err'); return; }
-    const phoneKey = Object.keys(convOut[0]).find(k => /phone/i.test(k));
-    if (!phoneKey) { toast('No phone column in output', 'err'); return; }
-    contacts = convOut.filter(r => r[phoneKey]).map(r => ({
-        ...r,
-        phone: r[phoneKey],
-        name: r.name || r.Name || '',
-        tags: r.tags || r.Tags || ''
-    }));
-    buildTagFilters();
-    buildRecipientFilter();
-    updateStats();
-    switchTab('contacts', document.querySelectorAll('.tab')[1]);
-    renderContacts();
-    toast(`Imported ${contacts.length} contacts`, 'ok');
-}
-
-function dlConverted() {
-    if (!convOut.length) { toast('Nothing to download', 'err'); return; }
-    const headers = Object.keys(convOut[0]);
-    const csv = [headers.join(','),
-    ...convOut.map(r => headers.map(h => `"${(r[h] || '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-    dlBlob(csv, 'novalink_converted_' + Date.now() + '.csv');
-}
-
-/* ════════════════════════════════
-   TEMPLATES
-   ════════════════════════════════ */
-function renderTplList() {
-    const el = $('tplList');
-    if (!templates.length) {
-        el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:24px">No templates</div>';
-        return;
-    }
-    el.innerHTML = templates.map(t => `
-  <div class="tpl-card" id="tc_${t.id}" onclick="toggleTplCard('${t.id}')">
-    <div style="display:flex;align-items:flex-start;gap:8px">
-      <div style="flex:1;min-width:0">
-        <div class="tpl-name">${esc(t.name)}</div>
-        <div class="tpl-desc">${esc(t.body.slice(0, 60).replace(/\n/g, ' '))}…</div>
-      </div>
-      <div class="tpl-badge">
-        <span class="badge b-info">${t.category}</span>
-        <button onclick="event.stopPropagation();editTpl('${t.id}')" class="btn btn-outline btn-sm" style="font-size:11px">Edit</button>
-        ${!BUILTIN_TEMPLATES.find(b => b.id === t.id)
-            ? `<button onclick="event.stopPropagation();deleteTpl('${t.id}')" class="btn btn-danger btn-sm" style="font-size:11px">Del</button>` : ''}
-      </div>
-    </div>
-    <div class="tpl-preview">${t.body.replace(/\{\{(\w+)\}\}/g, '<span class="var-tag">{{$1}}</span>').replace(/\n/g, '<br>')}</div>
-  </div>`).join('');
-
-    const opts = '<option value="">— choose template —</option>' +
-        templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    $('quickTplSel').innerHTML = opts;
-    $('broadTplSel').innerHTML = opts;
-}
-
-function toggleTplCard(id) {
-    const el = $('tc_' + id);
-    const wasSelected = el.classList.contains('selected');
-    document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
-    if (!wasSelected) el.classList.add('selected');
-}
-
-function saveTpl() {
-    const name = $('tplName').value.trim();
-    const body = $('tplBody').value.trim();
-    const cat = $('tplCat').value;
-    if (!name) { toast('Enter a template name', 'err'); return; }
-    if (!body) { toast('Enter a message body', 'err'); return; }
-    if (editingTplId) {
-        const t = templates.find(x => x.id === editingTplId);
-        if (t) { t.name = name; t.body = body; t.category = cat; }
-    } else {
-        templates.push({ id: 'tpl_' + Date.now(), name, category: cat, body });
-    }
-    resetTplForm();
-    renderTplList();
-    toast('Template saved', 'ok');
-}
-
-function editTpl(id) {
-    const t = templates.find(x => x.id === id);
-    if (!t) return;
-    editingTplId = id;
-    $('tplName').value = t.name;
-    $('tplBody').value = t.body;
-    $('tplCat').value = t.category;
-    countTpl();
-    switchTab('templates', document.querySelectorAll('.tab')[3]);
-    $('tplName').focus();
-    toast('Editing: ' + t.name, 'warn');
-}
-
-function deleteTpl(id) {
-    if (!confirm('Delete this template?')) return;
-    templates = templates.filter(t => t.id !== id);
-    renderTplList();
-    toast('Template deleted', 'info');
-}
-
-function resetTplForm() {
-    editingTplId = null;
-    $('tplName').value = '';
-    $('tplBody').value = '';
-    $('tplCC').textContent = '0';
-    $('tplPreviewOut').style.display = 'none';
-}
-
-function previewTpl() {
-    const body = $('tplBody').value.trim();
-    if (!body) { toast('Write a template first', 'err'); return; }
-    const sample = { name: 'Ama Owusu', voucher: 'nnby2835', package: 'Short', amount: '12.00', phone: '+233241234567' };
-    $('tplPreviewBox').textContent = resolveVars(body, sample);
-    $('tplPreviewOut').style.display = 'block';
-}
-
-function applyTplToQuick() {
-    const id = $('quickTplSel').value;
-    if (!id) return;
-    const t = templates.find(x => x.id === id);
-    if (!t) return;
-    $('quickMsg').value = t.body;
-    countQ();
-    toast('Template applied', 'info');
-}
-
-function applyTplToBroad() {
-    const id = $('broadTplSel').value;
-    if (!id) return;
-    const t = templates.find(x => x.id === id);
-    if (!t) return;
-    $('msgBody').value = t.body;
-    countB();
-    toast('Template applied', 'info');
-}
-
-/* ════════════════════════════════
-   INIT
-   ════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-    renderTplList();
-    updateStats();
-    updateRCount();
-    // Auto-fetch balance on page load (silent — no error toast on first visit)
-    checkBalance(true);
-});
+</html>
